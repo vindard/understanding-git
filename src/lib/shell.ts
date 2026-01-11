@@ -1,5 +1,15 @@
 import * as gitLib from './git';
 import * as fsLib from './fs';
+import { resetFs } from './fs';
+
+const CWD = '/repo';
+
+function resolvePath(path: string): string {
+  if (path.startsWith('/')) {
+    return path;
+  }
+  return `${CWD}/${path}`;
+}
 
 export interface CommandResult {
   output: string;
@@ -29,9 +39,12 @@ export async function executeCommand(command: string): Promise<CommandResult> {
         return await handleTouchCommand(args);
       case 'help':
         return {
-          output: 'Available commands: git, ls, cat, echo, pwd, mkdir, touch, help',
+          output: 'Available commands: git, ls, cat, echo, pwd, mkdir, touch, reset, help',
           success: true,
         };
+      case 'reset':
+        await resetFs();
+        return { output: 'Environment reset. Run "git init" to start fresh.', success: true };
       default:
         return { output: `Command not found: ${cmd}`, success: false };
     }
@@ -60,8 +73,14 @@ async function handleGitCommand(args: string[]): Promise<CommandResult> {
 
     case 'commit':
       if (args[1] === '-m' && args[2]) {
-        const sha = await gitLib.gitCommit(args.slice(2).join(' '));
-        return { output: `[main ${sha.slice(0, 7)}] ${args.slice(2).join(' ')}`, success: true };
+        // Join message and strip surrounding quotes
+        let message = args.slice(2).join(' ');
+        if ((message.startsWith('"') && message.endsWith('"')) ||
+            (message.startsWith("'") && message.endsWith("'"))) {
+          message = message.slice(1, -1);
+        }
+        const sha = await gitLib.gitCommit(message);
+        return { output: `[main ${sha.slice(0, 7)}] ${message}`, success: true };
       }
       return { output: 'Please provide a commit message with -m', success: false };
 
@@ -70,12 +89,19 @@ async function handleGitCommand(args: string[]): Promise<CommandResult> {
       if (status.length === 0) {
         return { output: 'nothing to commit, working tree clean', success: true };
       }
-      const statusLines = status.map(([filepath, head, workdir, stage]) => {
+      // Filter out clean files (head=1, workdir=1, stage=1 means unchanged)
+      const changedFiles = status.filter(([, head, workdir, stage]) => {
+        return !(head === 1 && workdir === 1 && stage === 1);
+      });
+      if (changedFiles.length === 0) {
+        return { output: 'nothing to commit, working tree clean', success: true };
+      }
+      const statusLines = changedFiles.map(([filepath, head, workdir, stage]) => {
         if (head === 0 && workdir === 2 && stage === 0) return `?? ${filepath}`;
-        if (head === 1 && workdir === 1 && stage === 1) return `   ${filepath}`;
         if (stage === 2) return `A  ${filepath}`;
-        if (workdir === 2) return ` M ${filepath}`;
-        return `   ${filepath}`;
+        if (stage === 3) return `M  ${filepath}`;
+        if (workdir === 2 && stage === 1) return ` M ${filepath}`;
+        return `?? ${filepath}`;
       });
       return { output: statusLines.join('\n'), success: true };
 
@@ -112,7 +138,7 @@ async function handleGitCommand(args: string[]): Promise<CommandResult> {
 }
 
 async function handleLsCommand(args: string[]): Promise<CommandResult> {
-  const path = args[0] || '/repo';
+  const path = args[0] ? resolvePath(args[0]) : CWD;
   const files = await fsLib.readdir(path);
   return { output: files.join('\n'), success: true };
 }
@@ -121,7 +147,8 @@ async function handleCatCommand(args: string[]): Promise<CommandResult> {
   if (!args[0]) {
     return { output: 'cat: missing file operand', success: false };
   }
-  const content = await fsLib.readFile(args[0]);
+  const path = resolvePath(args[0]);
+  const content = await fsLib.readFile(path);
   return { output: content, success: true };
 }
 
@@ -129,7 +156,8 @@ async function handleMkdirCommand(args: string[]): Promise<CommandResult> {
   if (!args[0]) {
     return { output: 'mkdir: missing operand', success: false };
   }
-  await fsLib.mkdir(args[0]);
+  const path = resolvePath(args[0]);
+  await fsLib.mkdir(path);
   return { output: '', success: true };
 }
 
@@ -137,10 +165,11 @@ async function handleTouchCommand(args: string[]): Promise<CommandResult> {
   if (!args[0]) {
     return { output: 'touch: missing file operand', success: false };
   }
+  const path = resolvePath(args[0]);
   try {
-    await fsLib.readFile(args[0]);
+    await fsLib.readFile(path);
   } catch {
-    await fsLib.writeFile(args[0], '');
+    await fsLib.writeFile(path, '');
   }
   return { output: '', success: true };
 }

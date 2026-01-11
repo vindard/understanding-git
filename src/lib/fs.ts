@@ -1,14 +1,25 @@
 import LightningFS from '@isomorphic-git/lightning-fs';
 
-export const fs = new LightningFS('git-learning-fs');
+const DB_NAME = 'git-learning-fs';
+
+export let fs = new LightningFS(DB_NAME);
+
+export async function resetFs(): Promise<void> {
+  // Delete the IndexedDB database and create a fresh one
+  await new Promise<void>((resolve, reject) => {
+    const request = indexedDB.deleteDatabase(DB_NAME);
+    request.onsuccess = () => resolve();
+    request.onerror = () => reject(request.error);
+  });
+  // Create a fresh filesystem
+  fs = new LightningFS(DB_NAME);
+  // Create the repo directory
+  await fs.promises.mkdir('/repo');
+}
 
 export async function initializeFs(): Promise<void> {
-  // Create a sample directory structure
-  try {
-    await fs.promises.mkdir('/repo');
-  } catch {
-    // Directory may already exist
-  }
+  // Always start fresh for consistent learning experience
+  await resetFs();
 }
 
 export async function readFile(path: string): Promise<string> {

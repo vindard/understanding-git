@@ -50,8 +50,6 @@ function App() {
   const [files, setFiles] = useState<FileNode[]>([]);
   const [selectedFile, setSelectedFile] = useState<string | null>(null);
   const [fileContent, setFileContent] = useState<string>('');
-  const [_output, setOutput] = useState<string[]>([]);
-
   const refreshFileTree = useCallback(async () => {
     const tree = await buildFileTree('/repo');
     setFiles(tree);
@@ -73,8 +71,8 @@ function App() {
 
   const handleCommand = async (command: string) => {
     const result = await executeCommand(command);
-    setOutput((prev) => [...prev, `$ ${command}`, result.output].filter(Boolean));
     await refreshFileTree();
+    return result;
   };
 
   return (
