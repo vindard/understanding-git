@@ -2,6 +2,8 @@
 
 An interactive web-based git playground with curated exercises designed to teach and provide hands-on practice with git concepts.
 
+**Live Demo:** [understanding-git.vercel.app](https://understanding-git.vercel.app/)
+
 ## 📖 About
 
 Learning git can be challenging - the command line interface, abstract concepts like branches and merges, and the fear of breaking things can make it intimidating for beginners. This project aims to solve that by providing a safe, browser-based environment where users can:
