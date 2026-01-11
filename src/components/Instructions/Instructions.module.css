@@ -1,0 +1,103 @@
+.container {
+  padding: var(--spacing-md);
+  color: var(--color-text-primary);
+  height: 100%;
+  overflow: auto;
+}
+
+.title {
+  margin: 0 0 var(--spacing-md) 0;
+  font-size: var(--font-size-xl);
+  font-weight: 600;
+  color: var(--color-text-primary);
+}
+
+.content {
+  line-height: var(--line-height);
+  font-size: var(--font-size-md);
+}
+
+.content code {
+  background-color: var(--color-bg-tertiary);
+  padding: 2px 6px;
+  border-radius: var(--radius-sm);
+  font-family: var(--font-family-mono);
+  font-size: var(--font-size-sm);
+  color: var(--color-info);
+}
+
+.content strong {
+  color: var(--color-text-primary);
+  font-weight: 600;
+}
+
+.hints {
+  margin-top: var(--spacing-md);
+  border: 1px solid var(--color-border);
+  border-radius: var(--radius-md);
+  overflow: hidden;
+}
+
+.hintsSummary {
+  padding: var(--spacing-sm) var(--spacing-md);
+  cursor: pointer;
+  color: var(--color-info);
+  font-weight: 500;
+  background-color: var(--color-bg-tertiary);
+  transition: background-color var(--transition-fast);
+}
+
+.hintsSummary:hover {
+  background-color: var(--color-bg-hover);
+}
+
+.hintsList {
+  margin: 0;
+  padding: var(--spacing-sm) var(--spacing-md);
+  padding-left: var(--spacing-xl);
+  list-style-type: disc;
+}
+
+.hintsList li {
+  margin-bottom: var(--spacing-xs);
+  color: var(--color-text-secondary);
+}
+
+.navigation {
+  margin-top: var(--spacing-lg);
+  display: flex;
+  gap: var(--spacing-sm);
+}
+
+.navButton {
+  padding: var(--spacing-sm) var(--spacing-md);
+  border: none;
+  border-radius: var(--radius-md);
+  cursor: pointer;
+  font-size: var(--font-size-sm);
+  font-weight: 500;
+  transition: all var(--transition-fast);
+}
+
+.navButtonPrev {
+  background-color: var(--color-bg-tertiary);
+  color: var(--color-text-primary);
+}
+
+.navButtonPrev:hover {
+  background-color: var(--color-bg-hover);
+}
+
+.navButtonNext {
+  background-color: var(--color-accent);
+  color: var(--color-accent-text);
+}
+
+.navButtonNext:hover {
+  background-color: var(--color-accent-hover);
+}
+
+.placeholder {
+  padding: var(--spacing-md);
+  color: var(--color-text-muted);
+}

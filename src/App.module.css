@@ -1,0 +1,88 @@
+.container {
+  display: grid;
+  grid-template-columns: var(--sidebar-width) 1fr var(--panel-width);
+  grid-template-rows: 1fr var(--terminal-height);
+  height: 100vh;
+  background-color: var(--color-bg-primary);
+  color: var(--color-text-primary);
+  font-family: var(--font-family-ui);
+}
+
+/* Sidebar - File Tree */
+.sidebar {
+  grid-row: 1 / 3;
+  border-right: 1px solid var(--color-border);
+  overflow: hidden;
+  display: flex;
+  flex-direction: column;
+  background-color: var(--color-bg-secondary);
+}
+
+.sidebarHeader {
+  padding: var(--spacing-sm) var(--spacing-md);
+  font-size: var(--font-size-xs);
+  font-weight: 600;
+  text-transform: uppercase;
+  letter-spacing: 0.5px;
+  color: var(--color-text-secondary);
+  border-bottom: 1px solid var(--color-border);
+  flex-shrink: 0;
+}
+
+.sidebarContent {
+  flex: 1;
+  overflow: auto;
+}
+
+/* Editor Panel */
+.editorPanel {
+  border-bottom: 1px solid var(--color-border);
+  overflow: hidden;
+  display: flex;
+  flex-direction: column;
+}
+
+.editorPlaceholder {
+  padding: var(--spacing-md);
+  color: var(--color-text-muted);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  height: 100%;
+  font-size: var(--font-size-md);
+}
+
+/* Instructions Panel */
+.instructionsPanel {
+  grid-row: 1 / 3;
+  border-left: 1px solid var(--color-border);
+  overflow: hidden;
+  display: flex;
+  flex-direction: column;
+  background-color: var(--color-bg-secondary);
+}
+
+.panelHeader {
+  padding: var(--spacing-sm) var(--spacing-md);
+  font-size: var(--font-size-xs);
+  font-weight: 600;
+  text-transform: uppercase;
+  letter-spacing: 0.5px;
+  color: var(--color-text-secondary);
+  border-bottom: 1px solid var(--color-border);
+  flex-shrink: 0;
+  display: flex;
+  align-items: center;
+  gap: var(--spacing-sm);
+}
+
+.panelContent {
+  flex: 1;
+  overflow: auto;
+}
+
+/* Terminal Panel */
+.terminalPanel {
+  overflow: hidden;
+  background-color: var(--color-bg-primary);
+}

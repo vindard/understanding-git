@@ -1,4 +1,5 @@
 import { useState } from 'react';
+import styles from './FileTree.module.css';
 
 export interface FileNode {
   name: string;
@@ -32,28 +33,29 @@ function FileTreeItem({ node, depth, onFileSelect, selectedPath }: FileTreeItemP
     }
   };
 
+  const itemClasses = [
+    styles.item,
+    isSelected ? styles.itemSelected : ''
+  ].filter(Boolean).join(' ');
+
   return (
     <div>
       <div
         onClick={handleClick}
-        style={{
-          padding: '4px 8px',
-          paddingLeft: `${depth * 16 + 8}px`,
-          cursor: 'pointer',
-          backgroundColor: isSelected ? '#37373d' : 'transparent',
-          display: 'flex',
-          alignItems: 'center',
-          gap: '4px',
-        }}
+        className={itemClasses}
+        style={{ paddingLeft: `${depth * 16 + 8}px` }}
       >
         {node.type === 'directory' && (
-          <span style={{ fontSize: '10px' }}>{expanded ? '▼' : '▶'}</span>
+          <span className={styles.chevron}>{expanded ? '▼' : '▶'}</span>
         )}
-        <span>{node.type === 'directory' ? '📁' : '📄'}</span>
-        <span>{node.name}</span>
+        {node.type === 'file' && <span className={styles.chevron} />}
+        <span className={styles.icon}>
+          {node.type === 'directory' ? '📁' : '📄'}
+        </span>
+        <span className={styles.name}>{node.name}</span>
       </div>
       {node.type === 'directory' && expanded && node.children && (
-        <div>
+        <div className={styles.children}>
           {node.children.map((child) => (
             <FileTreeItem
               key={child.path}
@@ -71,7 +73,7 @@ function FileTreeItem({ node, depth, onFileSelect, selectedPath }: FileTreeItemP
 
 export function FileTree({ files, onFileSelect, selectedPath }: FileTreeProps) {
   return (
-    <div style={{ fontSize: '14px', fontFamily: 'system-ui' }}>
+    <div className={styles.tree}>
       {files.map((node) => (
         <FileTreeItem
           key={node.path}

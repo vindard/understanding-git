@@ -1,0 +1,14 @@
+.container {
+  height: 100%;
+  width: 100%;
+  background-color: var(--color-bg-primary);
+}
+
+/* XTerm overrides */
+.container :global(.xterm) {
+  padding: var(--spacing-sm);
+}
+
+.container :global(.xterm-viewport) {
+  background-color: var(--color-bg-primary) !important;
+}

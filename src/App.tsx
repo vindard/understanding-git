@@ -5,7 +5,8 @@ import { FileViewer } from './components/FileViewer/FileViewer';
 import { Instructions } from './components/Instructions/Instructions';
 import { executeCommand } from './lib/shell';
 import { initializeFs, readFile, readdir, stat } from './lib/fs';
-import './App.css';
+import './styles/variables.css';
+import styles from './App.module.css';
 
 const sampleLesson = {
   id: '1',
@@ -76,57 +77,44 @@ function App() {
   };
 
   return (
-    <div
-      style={{
-        display: 'grid',
-        gridTemplateColumns: '250px 1fr 350px',
-        gridTemplateRows: '1fr 300px',
-        height: '100vh',
-        backgroundColor: '#1e1e1e',
-        color: '#d4d4d4',
-      }}
-    >
-      {/* File Tree */}
-      <div
-        style={{
-          gridRow: '1 / 3',
-          borderRight: '1px solid #3c3c3c',
-          overflow: 'auto',
-          padding: '8px 0',
-        }}
-      >
-        <div style={{ padding: '8px 16px', fontWeight: 'bold', borderBottom: '1px solid #3c3c3c' }}>
-          FILES
+    <div className={styles.container}>
+      {/* File Tree Sidebar */}
+      <div className={styles.sidebar}>
+        <div className={styles.sidebarHeader}>
+          Explorer
         </div>
-        <FileTree files={files} onFileSelect={handleFileSelect} selectedPath={selectedFile || undefined} />
+        <div className={styles.sidebarContent}>
+          <FileTree
+            files={files}
+            onFileSelect={handleFileSelect}
+            selectedPath={selectedFile || undefined}
+          />
+        </div>
       </div>
 
-      {/* File Viewer */}
-      <div style={{ borderBottom: '1px solid #3c3c3c', overflow: 'hidden' }}>
+      {/* Editor Panel */}
+      <div className={styles.editorPanel}>
         {selectedFile ? (
           <FileViewer content={fileContent} path={selectedFile} />
         ) : (
-          <div style={{ padding: '16px', color: '#6e6e6e' }}>Select a file to view its contents</div>
+          <div className={styles.editorPlaceholder}>
+            Select a file to view its contents
+          </div>
         )}
       </div>
 
-      {/* Instructions */}
-      <div
-        style={{
-          gridRow: '1 / 3',
-          borderLeft: '1px solid #3c3c3c',
-          overflow: 'auto',
-          backgroundColor: '#252526',
-        }}
-      >
-        <div style={{ padding: '8px 16px', fontWeight: 'bold', borderBottom: '1px solid #3c3c3c' }}>
-          INSTRUCTIONS
+      {/* Instructions Panel */}
+      <div className={styles.instructionsPanel}>
+        <div className={styles.panelHeader}>
+          Instructions
         </div>
-        <Instructions lesson={sampleLesson} hasNext={true} />
+        <div className={styles.panelContent}>
+          <Instructions lesson={sampleLesson} hasNext={true} />
+        </div>
       </div>
 
-      {/* Terminal */}
-      <div style={{ overflow: 'hidden' }}>
+      {/* Terminal Panel */}
+      <div className={styles.terminalPanel}>
         <Terminal onCommand={handleCommand} />
       </div>
     </div>

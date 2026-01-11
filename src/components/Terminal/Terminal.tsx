@@ -3,6 +3,7 @@ import { Terminal as XTerm } from '@xterm/xterm';
 import { FitAddon } from '@xterm/addon-fit';
 import { WebLinksAddon } from '@xterm/addon-web-links';
 import '@xterm/xterm/css/xterm.css';
+import styles from './Terminal.module.css';
 
 interface CommandResult {
   output: string;
@@ -45,6 +46,9 @@ export function Terminal({ onCommand }: TerminalProps) {
       theme: {
         background: '#1e1e1e',
         foreground: '#d4d4d4',
+        cursor: '#d4d4d4',
+        cursorAccent: '#1e1e1e',
+        selectionBackground: '#264f78',
       },
     });
 
@@ -178,5 +182,5 @@ export function Terminal({ onCommand }: TerminalProps) {
     };
   }, [writeOutput]);
 
-  return <div ref={terminalRef} style={{ height: '100%', width: '100%' }} />;
+  return <div ref={terminalRef} className={styles.container} />;
 }

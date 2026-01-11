@@ -1,3 +1,5 @@
+import styles from './Instructions.module.css';
+
 interface Lesson {
   id: string;
   title: string;
@@ -22,43 +24,34 @@ export function Instructions({
 }: InstructionsProps) {
   if (!lesson) {
     return (
-      <div style={{ padding: '16px', color: '#d4d4d4' }}>
+      <div className={styles.placeholder}>
         <p>Select a lesson to get started.</p>
       </div>
     );
   }
 
   return (
-    <div style={{ padding: '16px', color: '#d4d4d4', height: '100%', overflow: 'auto' }}>
-      <h2 style={{ marginTop: 0, marginBottom: '16px' }}>{lesson.title}</h2>
+    <div className={styles.container}>
+      <h2 className={styles.title}>{lesson.title}</h2>
       <div
-        style={{ lineHeight: 1.6, whiteSpace: 'pre-wrap' }}
+        className={styles.content}
         dangerouslySetInnerHTML={{ __html: lesson.content }}
       />
       {lesson.hints && lesson.hints.length > 0 && (
-        <details style={{ marginTop: '16px' }}>
-          <summary style={{ cursor: 'pointer', color: '#569cd6' }}>Hints</summary>
-          <ul style={{ marginTop: '8px' }}>
+        <details className={styles.hints}>
+          <summary className={styles.hintsSummary}>Hints</summary>
+          <ul className={styles.hintsList}>
             {lesson.hints.map((hint, index) => (
-              <li key={index} style={{ marginBottom: '4px' }}>
-                {hint}
-              </li>
+              <li key={index}>{hint}</li>
             ))}
           </ul>
         </details>
       )}
-      <div style={{ marginTop: '24px', display: 'flex', gap: '8px' }}>
+      <div className={styles.navigation}>
         {hasPrevious && (
           <button
             onClick={onPrevious}
-            style={{
-              padding: '8px 16px',
-              backgroundColor: '#3c3c3c',
-              color: '#d4d4d4',
-              border: 'none',
-              borderRadius: '4px',
-              cursor: 'pointer',
-            }}
+            className={`${styles.navButton} ${styles.navButtonPrev}`}
           >
             ← Previous
           </button>
@@ -66,14 +59,7 @@ export function Instructions({
         {hasNext && (
           <button
             onClick={onNext}
-            style={{
-              padding: '8px 16px',
-              backgroundColor: '#0e639c',
-              color: '#ffffff',
-              border: 'none',
-              borderRadius: '4px',
-              cursor: 'pointer',
-            }}
+            className={`${styles.navButton} ${styles.navButtonNext}`}
           >
             Next →
           </button>

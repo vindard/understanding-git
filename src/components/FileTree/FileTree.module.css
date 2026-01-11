@@ -1,0 +1,51 @@
+.tree {
+  font-size: var(--font-size-sm);
+  font-family: var(--font-family-ui);
+  padding: var(--spacing-xs) 0;
+}
+
+.item {
+  display: flex;
+  align-items: center;
+  gap: var(--spacing-xs);
+  padding: var(--spacing-xs) var(--spacing-sm);
+  cursor: pointer;
+  transition: background-color var(--transition-fast);
+  user-select: none;
+}
+
+.item:hover {
+  background-color: var(--color-bg-hover);
+}
+
+.itemSelected {
+  background-color: var(--color-bg-active);
+}
+
+.itemSelected:hover {
+  background-color: var(--color-bg-active);
+}
+
+.chevron {
+  font-size: 10px;
+  width: 16px;
+  text-align: center;
+  color: var(--color-text-secondary);
+  flex-shrink: 0;
+}
+
+.icon {
+  flex-shrink: 0;
+  font-size: var(--font-size-md);
+}
+
+.name {
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  color: var(--color-text-primary);
+}
+
+.children {
+  /* Indentation handled inline */
+}
