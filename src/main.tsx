@@ -5,7 +5,7 @@ import './index.css'
 import App from './App.tsx'
 
 // Polyfill Buffer for isomorphic-git
-globalThis.Buffer = Buffer
+(globalThis as unknown as { Buffer: typeof Buffer }).Buffer = Buffer
 
 createRoot(document.getElementById('root')!).render(
   <StrictMode>

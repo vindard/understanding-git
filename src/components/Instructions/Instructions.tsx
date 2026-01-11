@@ -1,26 +1,30 @@
+import type { Lesson } from '../../types/lesson';
 import styles from './Instructions.module.css';
-
-interface Lesson {
-  id: string;
-  title: string;
-  content: string;
-  hints?: string[];
-}
 
 interface InstructionsProps {
   lesson: Lesson | null;
+  currentExerciseIndex: number;
+  completedExercises: string[];
+  isLessonComplete: boolean;
   onNext?: () => void;
   onPrevious?: () => void;
   hasNext?: boolean;
   hasPrevious?: boolean;
+  lessonNumber: number;
+  totalLessons: number;
 }
 
 export function Instructions({
   lesson,
+  currentExerciseIndex,
+  completedExercises,
+  isLessonComplete,
   onNext,
   onPrevious,
   hasNext = false,
   hasPrevious = false,
+  lessonNumber,
+  totalLessons,
 }: InstructionsProps) {
   if (!lesson) {
     return (
@@ -32,36 +36,72 @@ export function Instructions({
 
   return (
     <div className={styles.container}>
-      <h2 className={styles.title}>{lesson.title}</h2>
-      <div
-        className={styles.content}
-        dangerouslySetInnerHTML={{ __html: lesson.content }}
-      />
-      {lesson.hints && lesson.hints.length > 0 && (
-        <details className={styles.hints}>
-          <summary className={styles.hintsSummary}>Hints</summary>
-          <ul className={styles.hintsList}>
-            {lesson.hints.map((hint, index) => (
-              <li key={index}>{hint}</li>
-            ))}
-          </ul>
-        </details>
+      <div className={styles.lessonHeader}>
+        <span className={styles.lessonNumber}>
+          Lesson {lessonNumber} of {totalLessons}
+        </span>
+        <h2 className={styles.title}>{lesson.title}</h2>
+        <p className={styles.description}>{lesson.description}</p>
+      </div>
+
+      <div className={styles.exercises}>
+        {lesson.exercises.map((exercise, index) => {
+          const isCompleted = completedExercises.includes(exercise.id);
+          const isCurrent = index === currentExerciseIndex && !isLessonComplete;
+
+          return (
+            <div
+              key={exercise.id}
+              className={`${styles.exercise} ${isCompleted ? styles.exerciseCompleted : ''} ${isCurrent ? styles.exerciseCurrent : ''}`}
+            >
+              <div className={styles.exerciseStatus}>
+                {isCompleted ? (
+                  <span className={styles.checkmark}>✓</span>
+                ) : (
+                  <span className={styles.exerciseNumber}>{index + 1}</span>
+                )}
+              </div>
+              <div className={styles.exerciseContent}>
+                <p
+                  className={styles.exerciseInstruction}
+                  dangerouslySetInnerHTML={{ __html: exercise.instruction }}
+                />
+                {isCompleted && (
+                  <p className={styles.successMessage}>{exercise.successMessage}</p>
+                )}
+                {isCurrent && exercise.hint && (
+                  <details className={styles.hint}>
+                    <summary className={styles.hintSummary}>Need a hint?</summary>
+                    <p className={styles.hintText}>{exercise.hint}</p>
+                  </details>
+                )}
+              </div>
+            </div>
+          );
+        })}
+      </div>
+
+      {isLessonComplete && (
+        <div className={styles.lessonComplete}>
+          <p>🎉 Lesson Complete!</p>
+        </div>
       )}
+
       <div className={styles.navigation}>
         {hasPrevious && (
           <button
             onClick={onPrevious}
             className={`${styles.navButton} ${styles.navButtonPrev}`}
           >
-            ← Previous
+            ← Previous Lesson
           </button>
         )}
-        {hasNext && (
+        {hasNext && isLessonComplete && (
           <button
             onClick={onNext}
             className={`${styles.navButton} ${styles.navButtonNext}`}
           >
-            Next →
+            Next Lesson →
           </button>
         )}
       </div>

@@ -7,24 +7,10 @@ import { FileViewer } from './components/FileViewer/FileViewer';
 import { Instructions } from './components/Instructions/Instructions';
 import { executeCommand } from './lib/shell';
 import { initializeFs, readFile, readdir, stat } from './lib/fs';
+import { lessons } from './data/lessons';
+import { useLessonProgress } from './hooks/useLessonProgress';
 import './styles/variables.css';
 import styles from './App.module.css';
-
-const sampleLesson = {
-  id: '1',
-  title: 'Getting Started with Git',
-  content: `Welcome to the Git learning environment!
-
-In this lesson, you'll learn how to initialize a Git repository.
-
-<strong>Your task:</strong>
-1. Initialize a new git repository using <code>git init</code>
-2. Create a file using <code>touch README.md</code>
-3. Check the status with <code>git status</code>
-
-Try typing commands in the terminal below.`,
-  hints: ['Type "git init" to initialize a repository', 'Use "help" to see available commands'],
-};
 
 async function buildFileTree(path: string): Promise<FileNode[]> {
   try {
@@ -53,6 +39,19 @@ function App() {
   const [files, setFiles] = useState<FileNode[]>([]);
   const [selectedFile, setSelectedFile] = useState<string | null>(null);
   const [fileContent, setFileContent] = useState<string>('');
+
+  const {
+    currentLesson,
+    currentExerciseIndex,
+    completedExercises,
+    isLessonComplete,
+    checkCurrentExercise,
+    goToNextLesson,
+    goToPreviousLesson,
+    lessonIndex,
+    totalLessons,
+  } = useLessonProgress(lessons);
+
   const refreshFileTree = useCallback(async () => {
     const tree = await buildFileTree('/repo');
     setFiles(tree);
@@ -75,6 +74,10 @@ function App() {
   const handleCommand = async (command: string) => {
     const result = await executeCommand(command);
     await refreshFileTree();
+
+    // Check if current exercise is completed after each command
+    await checkCurrentExercise(command);
+
     return result;
   };
 
@@ -129,7 +132,18 @@ function App() {
               Instructions
             </div>
             <div className={styles.panelContent}>
-              <Instructions lesson={sampleLesson} hasNext={true} />
+              <Instructions
+                lesson={currentLesson}
+                currentExerciseIndex={currentExerciseIndex}
+                completedExercises={completedExercises}
+                isLessonComplete={isLessonComplete}
+                onNext={goToNextLesson}
+                onPrevious={goToPreviousLesson}
+                hasNext={lessonIndex < totalLessons - 1}
+                hasPrevious={lessonIndex > 0}
+                lessonNumber={lessonIndex + 1}
+                totalLessons={totalLessons}
+              />
             </div>
           </div>
         </Allotment.Pane>

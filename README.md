@@ -31,14 +31,17 @@ Learning git can be challenging - the command line interface, abstract concepts 
   - Color-coded output
 - **File Explorer**: Visual tree view of the virtual filesystem
 - **File Viewer**: Monaco editor integration for viewing file contents
-- **Instructions Panel**: Guided lessons with hints
 - **Resizable Panes**: VS Code-like draggable panel resizing
 - **Shell Commands**: Basic filesystem commands (`ls`, `cat`, `touch`, `mkdir`, `echo`, `pwd`, `clear`, `reset`)
+- **Lesson System**: Progressive exercises teaching git fundamentals
+  - 5 lessons covering repository basics, file tracking, commits, and workflows
+  - Hybrid validation: checks both command patterns and resulting state
+  - Visual progress tracking with checkmarks
+  - Hints for when you get stuck
+  - Auto-advance to next exercise on completion
 
 ### Planned
 
-- Multiple curated lessons covering git fundamentals to advanced topics
-- Progress tracking and completion status
 - Branching and merging visualizations
 - Interactive rebasing exercises
 - Conflict resolution practice
