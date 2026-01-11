@@ -4,6 +4,16 @@ import { resetFs } from './fs';
 
 const CWD = '/repo';
 
+// ANSI color codes
+const colors = {
+  reset: '\x1b[0m',
+  red: '\x1b[31m',
+  green: '\x1b[32m',
+  yellow: '\x1b[33m',
+  blue: '\x1b[34m',
+  cyan: '\x1b[36m',
+};
+
 function resolvePath(path: string): string {
   if (path.startsWith('/')) {
     return path;
@@ -39,18 +49,21 @@ export async function executeCommand(command: string): Promise<CommandResult> {
         return await handleTouchCommand(args);
       case 'help':
         return {
-          output: 'Available commands: git, ls, cat, echo, pwd, mkdir, touch, reset, help',
+          output: 'Available commands: git, ls, cat, echo, pwd, mkdir, touch, reset, clear, help',
           success: true,
         };
       case 'reset':
         await resetFs();
         return { output: 'Environment reset. Run "git init" to start fresh.', success: true };
+      case 'clear':
+        // Return escape sequence to clear screen and move cursor to top
+        return { output: '\x1b[2J\x1b[H', success: true };
       default:
         return { output: `Command not found: ${cmd}`, success: false };
     }
   } catch (error) {
     return {
-      output: `Error: ${error instanceof Error ? error.message : String(error)}`,
+      output: `${colors.red}Error: ${error instanceof Error ? error.message : String(error)}${colors.reset}`,
       success: false,
     };
   }
@@ -97,11 +110,23 @@ async function handleGitCommand(args: string[]): Promise<CommandResult> {
         return { output: 'nothing to commit, working tree clean', success: true };
       }
       const statusLines = changedFiles.map(([filepath, head, workdir, stage]) => {
-        if (head === 0 && workdir === 2 && stage === 0) return `?? ${filepath}`;
-        if (stage === 2) return `A  ${filepath}`;
-        if (stage === 3) return `M  ${filepath}`;
-        if (workdir === 2 && stage === 1) return ` M ${filepath}`;
-        return `?? ${filepath}`;
+        // Untracked files - red
+        if (head === 0 && workdir === 2 && stage === 0) {
+          return `${colors.red}?? ${filepath}${colors.reset}`;
+        }
+        // Staged (added) - green
+        if (stage === 2) {
+          return `${colors.green}A  ${filepath}${colors.reset}`;
+        }
+        // Staged (modified) - green
+        if (stage === 3) {
+          return `${colors.green}M  ${filepath}${colors.reset}`;
+        }
+        // Modified in working dir - red
+        if (workdir === 2 && stage === 1) {
+          return `${colors.red} M ${filepath}${colors.reset}`;
+        }
+        return `${colors.red}?? ${filepath}${colors.reset}`;
       });
       return { output: statusLines.join('\n'), success: true };
 
@@ -111,7 +136,7 @@ async function handleGitCommand(args: string[]): Promise<CommandResult> {
         return { output: 'No commits yet', success: true };
       }
       const logLines = commits.map(
-        (c) => `commit ${c.oid}\nAuthor: ${c.author}\n\n    ${c.message}`
+        (c) => `${colors.yellow}commit ${c.oid}${colors.reset}\nAuthor: ${c.author}\n\n    ${c.message}`
       );
       return { output: logLines.join('\n\n'), success: true };
 
@@ -122,7 +147,11 @@ async function handleGitCommand(args: string[]): Promise<CommandResult> {
       }
       const branches = await gitLib.gitListBranches();
       const current = await gitLib.gitCurrentBranch();
-      const branchList = branches.map((b) => (b === current ? `* ${b}` : `  ${b}`));
+      const branchList = branches.map((b) =>
+        b === current
+          ? `${colors.green}* ${b}${colors.reset}`
+          : `  ${b}`
+      );
       return { output: branchList.join('\n'), success: true };
 
     case 'checkout':
