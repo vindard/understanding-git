@@ -2,6 +2,7 @@ import { useEffect, useRef, useCallback } from 'react';
 import { Terminal as XTerm } from '@xterm/xterm';
 import { FitAddon } from '@xterm/addon-fit';
 import { WebLinksAddon } from '@xterm/addon-web-links';
+import { getCompletions } from '../../lib/completion';
 import '@xterm/xterm/css/xterm.css';
 import styles from './Terminal.module.css';
 
@@ -163,6 +164,37 @@ export function Terminal({ onCommand }: TerminalProps) {
           term.write(`\x1b[${currentLine.length - cursorPos}C`);
           cursorPos = currentLine.length;
         }
+      } else if (domEvent.key === 'Tab') {
+        domEvent.preventDefault();
+        // Handle tab completion asynchronously
+        getCompletions(currentLine, cursorPos).then(({ suggestions, replaceFrom }) => {
+          if (suggestions.length === 0) {
+            // No completions - do nothing
+            return;
+          }
+
+          if (suggestions.length === 1) {
+            // Single completion - apply it
+            const completion = suggestions[0];
+            const beforeReplace = currentLine.slice(0, replaceFrom);
+            const afterCursor = currentLine.slice(cursorPos);
+            currentLine = beforeReplace + completion + afterCursor;
+            cursorPos = beforeReplace.length + completion.length;
+            clearLine();
+            redrawLine();
+          } else {
+            // Multiple completions - show them
+            term.write('\r\n');
+            term.write(suggestions.join('  '));
+            term.write('\r\n$ ');
+            term.write(currentLine);
+            // Move cursor back to correct position
+            const moveBack = currentLine.length - cursorPos;
+            if (moveBack > 0) {
+              term.write(`\x1b[${moveBack}D`);
+            }
+          }
+        });
       } else if (printable && key.length === 1) {
         // Insert character at cursor position
         currentLine = currentLine.slice(0, cursorPos) + key + currentLine.slice(cursorPos);
