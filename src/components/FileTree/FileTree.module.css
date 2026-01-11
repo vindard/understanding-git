@@ -27,16 +27,22 @@
 }
 
 .chevron {
-  font-size: 10px;
   width: 16px;
-  text-align: center;
+  height: 16px;
   color: var(--color-text-secondary);
+  flex-shrink: 0;
+  transition: transform var(--transition-fast);
+}
+
+.chevronSpacer {
+  width: 16px;
   flex-shrink: 0;
 }
 
 .icon {
   flex-shrink: 0;
-  font-size: var(--font-size-md);
+  width: 16px;
+  height: 16px;
 }
 
 .name {
