@@ -172,11 +172,14 @@ export function Terminal({ onCommand }: TerminalProps) {
       }
     });
 
-    const handleResize = () => fitAddon.fit();
-    window.addEventListener('resize', handleResize);
+    // Use ResizeObserver to handle container resizes (from allotment panes)
+    const resizeObserver = new ResizeObserver(() => {
+      fitAddon.fit();
+    });
+    resizeObserver.observe(terminalRef.current);
 
     return () => {
-      window.removeEventListener('resize', handleResize);
+      resizeObserver.disconnect();
       term.dispose();
       xtermRef.current = null;
     };
