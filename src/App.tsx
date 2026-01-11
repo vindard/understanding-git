@@ -114,36 +114,52 @@ function App() {
 
         {/* Center: Editor + Terminal stacked vertically */}
         <Allotment.Pane>
-          <Allotment vertical>
-            {/* Editor Panel */}
-            <Allotment.Pane>
-              <div className={styles.editorPanel}>
-                {selectedFile ? (
-                  <>
-                    <div className={styles.editorHeader}>
-                      <span className={styles.editorFilename}>
-                        {selectedFile.replace('/repo/', '')}
-                      </span>
-                    </div>
-                    <div className={styles.editorContent}>
-                      <FileViewer content={fileContent} path={selectedFile} />
-                    </div>
-                  </>
-                ) : (
-                  <div className={styles.editorPlaceholder}>
-                    Select a file to view its contents
+          <div className={styles.centerPane}>
+            <div className={styles.centerContent}>
+              <Allotment vertical>
+                {/* Editor Panel */}
+                <Allotment.Pane>
+                  <div className={styles.editorPanel}>
+                    {selectedFile ? (
+                      <>
+                        <div className={styles.editorHeader}>
+                          <span className={styles.editorFilename}>
+                            {selectedFile.replace('/repo/', '')}
+                          </span>
+                        </div>
+                        <div className={styles.editorContent}>
+                          <FileViewer content={fileContent} path={selectedFile} />
+                        </div>
+                      </>
+                    ) : (
+                      <div className={styles.editorPlaceholder}>
+                        Select a file to view its contents
+                      </div>
+                    )}
                   </div>
-                )}
-              </div>
-            </Allotment.Pane>
+                </Allotment.Pane>
 
-            {/* Terminal Panel */}
-            <Allotment.Pane preferredSize={250} minSize={100} maxSize={500}>
-              <div className={styles.terminalPanel}>
-                <Terminal onCommand={handleCommand} />
-              </div>
-            </Allotment.Pane>
-          </Allotment>
+                {/* Terminal Panel */}
+                <Allotment.Pane preferredSize={250} minSize={100} maxSize={500}>
+                  <div className={styles.terminalPanel}>
+                    <Terminal onCommand={handleCommand} />
+                  </div>
+                </Allotment.Pane>
+              </Allotment>
+            </div>
+            <div className={styles.footerBar}>
+              Handmade with AI ❤️ (v
+              <a
+                href={`https://github.com/vindard/understanding-git/commit/${__COMMIT_SHA__}`}
+                target="_blank"
+                rel="noopener noreferrer"
+                className={styles.versionLink}
+              >
+                {__COMMIT_SHA__.slice(0, 7)}
+              </a>
+              )
+            </div>
+          </div>
         </Allotment.Pane>
 
         {/* Instructions Panel */}
