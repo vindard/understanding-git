@@ -107,7 +107,16 @@ function App() {
             <Allotment.Pane>
               <div className={styles.editorPanel}>
                 {selectedFile ? (
-                  <FileViewer content={fileContent} path={selectedFile} />
+                  <>
+                    <div className={styles.editorHeader}>
+                      <span className={styles.editorFilename}>
+                        {selectedFile.replace('/repo/', '')}
+                      </span>
+                    </div>
+                    <div className={styles.editorContent}>
+                      <FileViewer content={fileContent} path={selectedFile} />
+                    </div>
+                  </>
                 ) : (
                   <div className={styles.editorPlaceholder}>
                     Select a file to view its contents
