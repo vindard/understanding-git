@@ -6,6 +6,7 @@ interface InstructionsProps {
   currentExerciseIndex: number;
   completedExercises: string[];
   isLessonComplete: boolean;
+  isStateBroken?: boolean;
   onNext?: () => void;
   onPrevious?: () => void;
   hasNext?: boolean;
@@ -19,6 +20,7 @@ export function Instructions({
   currentExerciseIndex,
   completedExercises,
   isLessonComplete,
+  isStateBroken = false,
   onNext,
   onPrevious,
   hasNext = false,
@@ -43,6 +45,13 @@ export function Instructions({
         <h2 className={styles.title}>{lesson.title}</h2>
         <p className={styles.description}>{lesson.description}</p>
       </div>
+
+      {isStateBroken && (
+        <div className={styles.warningBanner}>
+          <p>The environment state has changed unexpectedly.</p>
+          <p>Try to restore it yourself, or type <code>reset</code> if unrecoverable.</p>
+        </div>
+      )}
 
       <div className={styles.exercises}>
         {lesson.exercises.map((exercise, index) => {

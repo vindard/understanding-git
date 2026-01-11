@@ -7,7 +7,9 @@ interface UseLessonProgressReturn {
   completedExercises: string[];
   isLessonComplete: boolean;
   isAllLessonsComplete: boolean;
+  isStateBroken: boolean;
   checkCurrentExercise: (lastCommand: string) => Promise<boolean>;
+  checkStateIntegrity: () => Promise<void>;
   goToNextLesson: () => void;
   goToPreviousLesson: () => void;
   resetProgress: () => void;
@@ -22,6 +24,7 @@ export function useLessonProgress(lessons: Lesson[]): UseLessonProgressReturn {
     completedExercises: [],
     currentExerciseIndex: 0,
   });
+  const [isStateBroken, setIsStateBroken] = useState(false);
 
   const currentLesson = lessons[lessonIndex];
   const currentExerciseIndex = progress.currentExerciseIndex;
@@ -72,6 +75,26 @@ export function useLessonProgress(lessons: Lesson[]): UseLessonProgressReturn {
     return isValid;
   }, [currentLesson, currentExerciseIndex, completedExercises]);
 
+  const checkStateIntegrity = useCallback(async () => {
+    if (!currentLesson || completedExercises.length === 0) {
+      setIsStateBroken(false);
+      return;
+    }
+
+    // Check if any completed exercise in current lesson has invalid state
+    for (const exerciseId of completedExercises) {
+      const exercise = currentLesson.exercises.find(ex => ex.id === exerciseId);
+      if (exercise) {
+        const isValid = await exercise.validate();
+        if (!isValid) {
+          setIsStateBroken(true);
+          return;
+        }
+      }
+    }
+    setIsStateBroken(false);
+  }, [currentLesson, completedExercises]);
+
   const goToNextLesson = useCallback(() => {
     if (lessonIndex < lessons.length - 1) {
       const nextIndex = lessonIndex + 1;
@@ -103,6 +126,7 @@ export function useLessonProgress(lessons: Lesson[]): UseLessonProgressReturn {
       completedExercises: [],
       currentExerciseIndex: 0,
     });
+    setIsStateBroken(false);
   }, [lessons]);
 
   return {
@@ -111,7 +135,9 @@ export function useLessonProgress(lessons: Lesson[]): UseLessonProgressReturn {
     completedExercises,
     isLessonComplete,
     isAllLessonsComplete,
+    isStateBroken,
     checkCurrentExercise,
+    checkStateIntegrity,
     goToNextLesson,
     goToPreviousLesson,
     resetProgress,

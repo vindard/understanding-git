@@ -45,9 +45,12 @@ function App() {
     currentExerciseIndex,
     completedExercises,
     isLessonComplete,
+    isStateBroken,
     checkCurrentExercise,
+    checkStateIntegrity,
     goToNextLesson,
     goToPreviousLesson,
+    resetProgress,
     lessonIndex,
     totalLessons,
   } = useLessonProgress(lessons);
@@ -75,8 +78,17 @@ function App() {
     const result = await executeCommand(command);
     await refreshFileTree();
 
-    // Check if current exercise is completed after each command
-    await checkCurrentExercise(command);
+    // Reset lesson progress when environment is reset
+    if (command.trim() === 'reset') {
+      resetProgress();
+      setSelectedFile(null);
+      setFileContent('');
+    } else {
+      // Check if current exercise is completed after each command
+      await checkCurrentExercise(command);
+      // Check if any completed exercises have broken state
+      await checkStateIntegrity();
+    }
 
     return result;
   };
@@ -146,6 +158,7 @@ function App() {
                 currentExerciseIndex={currentExerciseIndex}
                 completedExercises={completedExercises}
                 isLessonComplete={isLessonComplete}
+                isStateBroken={isStateBroken}
                 onNext={goToNextLesson}
                 onPrevious={goToPreviousLesson}
                 hasNext={lessonIndex < totalLessons - 1}
