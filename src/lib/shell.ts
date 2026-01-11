@@ -47,9 +47,11 @@ export async function executeCommand(command: string): Promise<CommandResult> {
         return await handleMkdirCommand(args);
       case 'touch':
         return await handleTouchCommand(args);
+      case 'rm':
+        return await handleRmCommand(args);
       case 'help':
         return {
-          output: 'Available commands: git, ls, cat, echo, pwd, mkdir, touch, reset, clear, help',
+          output: 'Available commands: git, ls, cat, echo, pwd, mkdir, touch, rm, reset, clear, help',
           success: true,
         };
       case 'reset':
@@ -201,4 +203,43 @@ async function handleTouchCommand(args: string[]): Promise<CommandResult> {
     await fsLib.writeFile(path, '');
   }
   return { output: '', success: true };
+}
+
+async function handleRmCommand(args: string[]): Promise<CommandResult> {
+  const recursive = args[0] === '-r' || args[0] === '-rf';
+  const targets = recursive ? args.slice(1) : args;
+
+  if (targets.length === 0) {
+    return { output: 'rm: missing operand', success: false };
+  }
+
+  for (const target of targets) {
+    const path = resolvePath(target);
+    const stats = await fsLib.stat(path);
+
+    if (stats.type === 'dir') {
+      if (!recursive) {
+        return { output: `rm: cannot remove '${target}': Is a directory`, success: false };
+      }
+      await removeRecursive(path);
+    } else {
+      await fsLib.unlink(path);
+    }
+  }
+
+  return { output: '', success: true };
+}
+
+async function removeRecursive(path: string): Promise<void> {
+  const entries = await fsLib.readdir(path);
+  for (const entry of entries) {
+    const fullPath = `${path}/${entry}`;
+    const stats = await fsLib.stat(fullPath);
+    if (stats.type === 'dir') {
+      await removeRecursive(fullPath);
+    } else {
+      await fsLib.unlink(fullPath);
+    }
+  }
+  await fsLib.rmdir(path);
 }

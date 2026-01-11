@@ -4,13 +4,13 @@ import * as gitLib from './git';
 const CWD = '/repo';
 
 // Available shell commands
-const COMMANDS = ['git', 'ls', 'cat', 'echo', 'pwd', 'mkdir', 'touch', 'reset', 'clear', 'help'];
+const COMMANDS = ['git', 'ls', 'cat', 'echo', 'pwd', 'mkdir', 'touch', 'rm', 'reset', 'clear', 'help'];
 
 // Git subcommands
 const GIT_SUBCOMMANDS = ['init', 'add', 'commit', 'status', 'log', 'branch', 'checkout'];
 
 // Commands that take file path arguments
-const PATH_COMMANDS = ['ls', 'cat', 'mkdir', 'touch'];
+const PATH_COMMANDS = ['ls', 'cat', 'mkdir', 'touch', 'rm'];
 
 // Git subcommands that take file path arguments
 const GIT_PATH_SUBCOMMANDS = ['add'];
