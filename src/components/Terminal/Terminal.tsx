@@ -68,6 +68,32 @@ export function Terminal({ onCommand }: TerminalProps) {
     const history: string[] = [];
     let historyIndex = -1;
 
+    // Completion state
+    let completionState: {
+      suggestions: string[];
+      index: number;
+      replaceFrom: number;
+      originalLine: string;
+      originalCursorPos: number;
+    } | null = null;
+
+    const resetCompletion = () => {
+      if (completionState) {
+        // Clear the suggestions line below, stay on command line
+        term.write('\r\n');        // Move to suggestions line
+        term.write('\x1b[2K');     // Clear it
+        term.write('\x1b[A');      // Move back up to command line
+        term.write('\r$ ');        // Reposition
+        term.write(currentLine);
+        // Restore cursor position
+        const moveBack = currentLine.length - cursorPos;
+        if (moveBack > 0) {
+          term.write(`\x1b[${moveBack}D`);
+        }
+      }
+      completionState = null;
+    };
+
     const clearLine = () => {
       // Move cursor to start of input and clear
       term.write('\r$ ' + ' '.repeat(currentLine.length) + '\r$ ');
@@ -82,12 +108,49 @@ export function Terminal({ onCommand }: TerminalProps) {
       }
     };
 
+    const applyCompletion = (completion: string, replaceFrom: number) => {
+      const beforeReplace = currentLine.slice(0, replaceFrom);
+      currentLine = beforeReplace + completion;
+      cursorPos = currentLine.length;
+    };
+
+    const renderSuggestionsLine = (suggestions: string[], activeIndex: number): string => {
+      return suggestions.map((suggestion, i) => {
+        if (i === activeIndex) {
+          return `\x1b[7m${suggestion}\x1b[0m`;
+        }
+        return suggestion;
+      }).join('  ');
+    };
+
+    const showCompletionsInitial = (suggestions: string[], activeIndex: number) => {
+      // Update command line in place, show suggestions below, return cursor to command line
+      clearLine();
+      redrawLine();
+      term.write('\r\n');                                      // Move to next line
+      term.write(renderSuggestionsLine(suggestions, activeIndex));
+      term.write('\x1b[A');                                    // Move back up to command line
+      term.write(`\r$ ${currentLine}`);                        // Position at end of command
+    };
+
+    const updateCompletionsInPlace = (suggestions: string[], activeIndex: number) => {
+      // Update command line, then update suggestions line below
+      clearLine();
+      redrawLine();
+      term.write('\r\n');                                      // Move to suggestions line
+      term.write('\x1b[2K');                                   // Clear it
+      term.write(renderSuggestionsLine(suggestions, activeIndex));
+      term.write('\x1b[A');                                    // Move back up to command line
+      term.write(`\r$ ${currentLine}`);                        // Position at end of command
+    };
+
     term.write('$ ');
 
     term.onKey(({ key, domEvent }) => {
       const printable = !domEvent.altKey && !domEvent.ctrlKey && !domEvent.metaKey;
 
       if (domEvent.key === 'Enter') {
+        resetCompletion();
         term.write('\r\n');
         const cmd = currentLine.trim();
 
@@ -111,6 +174,7 @@ export function Terminal({ onCommand }: TerminalProps) {
           term.write('$ ');
         }
       } else if (domEvent.key === 'Backspace') {
+        resetCompletion();
         if (cursorPos > 0) {
           currentLine = currentLine.slice(0, cursorPos - 1) + currentLine.slice(cursorPos);
           cursorPos--;
@@ -118,22 +182,26 @@ export function Terminal({ onCommand }: TerminalProps) {
           redrawLine();
         }
       } else if (domEvent.key === 'Delete') {
+        resetCompletion();
         if (cursorPos < currentLine.length) {
           currentLine = currentLine.slice(0, cursorPos) + currentLine.slice(cursorPos + 1);
           clearLine();
           redrawLine();
         }
       } else if (domEvent.key === 'ArrowLeft') {
+        resetCompletion();
         if (cursorPos > 0) {
           cursorPos--;
           term.write('\x1b[D');
         }
       } else if (domEvent.key === 'ArrowRight') {
+        resetCompletion();
         if (cursorPos < currentLine.length) {
           cursorPos++;
           term.write('\x1b[C');
         }
       } else if (domEvent.key === 'ArrowUp') {
+        resetCompletion();
         if (history.length > 0 && historyIndex > 0) {
           historyIndex--;
           clearLine();
@@ -142,6 +210,7 @@ export function Terminal({ onCommand }: TerminalProps) {
           redrawLine();
         }
       } else if (domEvent.key === 'ArrowDown') {
+        resetCompletion();
         if (historyIndex < history.length - 1) {
           historyIndex++;
           clearLine();
@@ -155,47 +224,54 @@ export function Terminal({ onCommand }: TerminalProps) {
           cursorPos = 0;
         }
       } else if (domEvent.key === 'Home') {
+        resetCompletion();
         if (cursorPos > 0) {
           term.write(`\x1b[${cursorPos}D`);
           cursorPos = 0;
         }
       } else if (domEvent.key === 'End') {
+        resetCompletion();
         if (cursorPos < currentLine.length) {
           term.write(`\x1b[${currentLine.length - cursorPos}C`);
           cursorPos = currentLine.length;
         }
       } else if (domEvent.key === 'Tab') {
         domEvent.preventDefault();
-        // Handle tab completion asynchronously
-        getCompletions(currentLine, cursorPos).then(({ suggestions, replaceFrom }) => {
-          if (suggestions.length === 0) {
-            // No completions - do nothing
-            return;
-          }
 
-          if (suggestions.length === 1) {
-            // Single completion - apply it
-            const completion = suggestions[0];
-            const beforeReplace = currentLine.slice(0, replaceFrom);
-            const afterCursor = currentLine.slice(cursorPos);
-            currentLine = beforeReplace + completion + afterCursor;
-            cursorPos = beforeReplace.length + completion.length;
-            clearLine();
-            redrawLine();
-          } else {
-            // Multiple completions - show them
-            term.write('\r\n');
-            term.write(suggestions.join('  '));
-            term.write('\r\n$ ');
-            term.write(currentLine);
-            // Move cursor back to correct position
-            const moveBack = currentLine.length - cursorPos;
-            if (moveBack > 0) {
-              term.write(`\x1b[${moveBack}D`);
+        if (completionState) {
+          // Already in completion mode - cycle to next
+          completionState.index = (completionState.index + 1) % completionState.suggestions.length;
+          const completion = completionState.suggestions[completionState.index];
+          applyCompletion(completion, completionState.replaceFrom);
+          updateCompletionsInPlace(completionState.suggestions, completionState.index);
+        } else {
+          // Start new completion
+          getCompletions(currentLine, cursorPos).then(({ suggestions, replaceFrom }) => {
+            if (suggestions.length === 0) {
+              return;
             }
-          }
-        });
+
+            if (suggestions.length === 1) {
+              // Single completion - apply it directly
+              applyCompletion(suggestions[0], replaceFrom);
+              clearLine();
+              redrawLine();
+            } else {
+              // Multiple completions - enter completion mode
+              completionState = {
+                suggestions,
+                index: 0,
+                replaceFrom,
+                originalLine: currentLine,
+                originalCursorPos: cursorPos,
+              };
+              applyCompletion(suggestions[0], replaceFrom);
+              showCompletionsInitial(suggestions, 0);
+            }
+          });
+        }
       } else if (printable && key.length === 1) {
+        resetCompletion();
         // Insert character at cursor position
         currentLine = currentLine.slice(0, cursorPos) + key + currentLine.slice(cursorPos);
         cursorPos++;
