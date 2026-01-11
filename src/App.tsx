@@ -1,4 +1,6 @@
 import { useState, useEffect, useCallback } from 'react';
+import { Allotment } from 'allotment';
+import 'allotment/dist/style.css';
 import { Terminal } from './components/Terminal/Terminal';
 import { FileTree, type FileNode } from './components/FileTree/FileTree';
 import { FileViewer } from './components/FileViewer/FileViewer';
@@ -78,45 +80,60 @@ function App() {
 
   return (
     <div className={styles.container}>
-      {/* File Tree Sidebar */}
-      <div className={styles.sidebar}>
-        <div className={styles.sidebarHeader}>
-          Explorer
-        </div>
-        <div className={styles.sidebarContent}>
-          <FileTree
-            files={files}
-            onFileSelect={handleFileSelect}
-            selectedPath={selectedFile || undefined}
-          />
-        </div>
-      </div>
-
-      {/* Editor Panel */}
-      <div className={styles.editorPanel}>
-        {selectedFile ? (
-          <FileViewer content={fileContent} path={selectedFile} />
-        ) : (
-          <div className={styles.editorPlaceholder}>
-            Select a file to view its contents
+      <Allotment>
+        {/* File Tree Sidebar */}
+        <Allotment.Pane preferredSize={250} minSize={150} maxSize={400}>
+          <div className={styles.sidebar}>
+            <div className={styles.sidebarHeader}>
+              Explorer
+            </div>
+            <div className={styles.sidebarContent}>
+              <FileTree
+                files={files}
+                onFileSelect={handleFileSelect}
+                selectedPath={selectedFile || undefined}
+              />
+            </div>
           </div>
-        )}
-      </div>
+        </Allotment.Pane>
 
-      {/* Instructions Panel */}
-      <div className={styles.instructionsPanel}>
-        <div className={styles.panelHeader}>
-          Instructions
-        </div>
-        <div className={styles.panelContent}>
-          <Instructions lesson={sampleLesson} hasNext={true} />
-        </div>
-      </div>
+        {/* Center: Editor + Terminal stacked vertically */}
+        <Allotment.Pane>
+          <Allotment vertical>
+            {/* Editor Panel */}
+            <Allotment.Pane>
+              <div className={styles.editorPanel}>
+                {selectedFile ? (
+                  <FileViewer content={fileContent} path={selectedFile} />
+                ) : (
+                  <div className={styles.editorPlaceholder}>
+                    Select a file to view its contents
+                  </div>
+                )}
+              </div>
+            </Allotment.Pane>
 
-      {/* Terminal Panel */}
-      <div className={styles.terminalPanel}>
-        <Terminal onCommand={handleCommand} />
-      </div>
+            {/* Terminal Panel */}
+            <Allotment.Pane preferredSize={250} minSize={100} maxSize={500}>
+              <div className={styles.terminalPanel}>
+                <Terminal onCommand={handleCommand} />
+              </div>
+            </Allotment.Pane>
+          </Allotment>
+        </Allotment.Pane>
+
+        {/* Instructions Panel */}
+        <Allotment.Pane preferredSize={350} minSize={200} maxSize={500}>
+          <div className={styles.instructionsPanel}>
+            <div className={styles.panelHeader}>
+              Instructions
+            </div>
+            <div className={styles.panelContent}>
+              <Instructions lesson={sampleLesson} hasNext={true} />
+            </div>
+          </div>
+        </Allotment.Pane>
+      </Allotment>
     </div>
   );
 }
