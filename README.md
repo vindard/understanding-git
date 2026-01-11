@@ -1,73 +1,112 @@
-# React + TypeScript + Vite
+# 🌳 Understanding Git
 
-This template provides a minimal setup to get React working in Vite with HMR and some ESLint rules.
+An interactive web-based git playground with curated exercises designed to teach and provide hands-on practice with git concepts.
 
-Currently, two official plugins are available:
+## 📖 About
 
-- [@vitejs/plugin-react](https://github.com/vitejs/vite-plugin-react/blob/main/packages/plugin-react) uses [Babel](https://babeljs.io/) (or [oxc](https://oxc.rs) when used in [rolldown-vite](https://vite.dev/guide/rolldown)) for Fast Refresh
-- [@vitejs/plugin-react-swc](https://github.com/vitejs/vite-plugin-react/blob/main/packages/plugin-react-swc) uses [SWC](https://swc.rs/) for Fast Refresh
+Learning git can be challenging - the command line interface, abstract concepts like branches and merges, and the fear of breaking things can make it intimidating for beginners. This project aims to solve that by providing a safe, browser-based environment where users can:
 
-## React Compiler
+- Practice git commands without fear of breaking anything
+- Follow guided lessons that introduce concepts progressively
+- See immediate visual feedback as files and the repository state change
+- Build muscle memory through hands-on exercises
 
-The React Compiler is not enabled on this template because of its impact on dev & build performances. To add it, see [this documentation](https://react.dev/learn/react-compiler/installation).
+## ✨ Features
 
-## Expanding the ESLint configuration
+### Implemented
 
-If you are developing a production application, we recommend updating the configuration to enable type-aware lint rules:
+- **Virtual Filesystem**: In-browser filesystem using IndexedDB that resets on page refresh for a clean slate each session
+- **Git Operations**: Core git commands powered by isomorphic-git
+  - `git init` - Initialize a repository
+  - `git add` - Stage files
+  - `git commit` - Commit changes
+  - `git status` - View repository status (with color-coded output)
+  - `git log` - View commit history
+  - `git branch` - List and create branches
+  - `git checkout` - Switch branches
+- **Interactive Terminal**: Full terminal emulator with:
+  - Command history (up/down arrows)
+  - Cursor navigation (left/right arrows, Home/End)
+  - Line editing (backspace, delete)
+  - Color-coded output
+- **File Explorer**: Visual tree view of the virtual filesystem
+- **File Viewer**: Monaco editor integration for viewing file contents
+- **Instructions Panel**: Guided lessons with hints
+- **Resizable Panes**: VS Code-like draggable panel resizing
+- **Shell Commands**: Basic filesystem commands (`ls`, `cat`, `touch`, `mkdir`, `echo`, `pwd`, `clear`, `reset`)
 
-```js
-export default defineConfig([
-  globalIgnores(['dist']),
-  {
-    files: ['**/*.{ts,tsx}'],
-    extends: [
-      // Other configs...
+### Planned
 
-      // Remove tseslint.configs.recommended and replace with this
-      tseslint.configs.recommendedTypeChecked,
-      // Alternatively, use this for stricter rules
-      tseslint.configs.strictTypeChecked,
-      // Optionally, add this for stylistic rules
-      tseslint.configs.stylisticTypeChecked,
+- Multiple curated lessons covering git fundamentals to advanced topics
+- Progress tracking and completion status
+- Branching and merging visualizations
+- Interactive rebasing exercises
+- Conflict resolution practice
 
-      // Other configs...
-    ],
-    languageOptions: {
-      parserOptions: {
-        project: ['./tsconfig.node.json', './tsconfig.app.json'],
-        tsconfigRootDir: import.meta.dirname,
-      },
-      // other options...
-    },
-  },
-])
+## 🛠️ Tech Stack
+
+- **React 19** + TypeScript
+- **Vite** - Build tooling
+- **isomorphic-git** - Pure JavaScript git implementation
+- **lightning-fs** - IndexedDB-backed filesystem
+- **xterm.js** - Terminal emulator
+- **Monaco Editor** - Code viewer
+- **allotment** - Resizable pane layout
+- **CSS Modules** - Scoped styling with design tokens
+
+## 🚀 Development
+
+### Prerequisites
+
+- Node.js 20+
+- pnpm
+
+### Using Nix (Recommended)
+
+This project includes a Nix flake for reproducible development environments.
+
+```bash
+# Enter the development shell
+nix develop
+
+# Or with direnv (recommended for automatic activation)
+echo "use flake" > .envrc
+direnv allow
 ```
 
-You can also install [eslint-plugin-react-x](https://github.com/Rel1cx/eslint-react/tree/main/packages/plugins/eslint-plugin-react-x) and [eslint-plugin-react-dom](https://github.com/Rel1cx/eslint-react/tree/main/packages/plugins/eslint-plugin-react-dom) for React-specific lint rules:
+The Nix environment provides:
+- Node.js 20
+- pnpm
+- git
+- just (command runner)
 
-```js
-// eslint.config.js
-import reactX from 'eslint-plugin-react-x'
-import reactDom from 'eslint-plugin-react-dom'
+### Using direnv
 
-export default defineConfig([
-  globalIgnores(['dist']),
-  {
-    files: ['**/*.{ts,tsx}'],
-    extends: [
-      // Other configs...
-      // Enable lint rules for React
-      reactX.configs['recommended-typescript'],
-      // Enable lint rules for React DOM
-      reactDom.configs.recommended,
-    ],
-    languageOptions: {
-      parserOptions: {
-        project: ['./tsconfig.node.json', './tsconfig.app.json'],
-        tsconfigRootDir: import.meta.dirname,
-      },
-      // other options...
-    },
-  },
-])
+If you have [direnv](https://direnv.net/) installed, the development environment will automatically activate when you enter the project directory:
+
+1. Install direnv and hook it into your shell
+2. Create `.envrc` with `use flake` (or it may already exist)
+3. Run `direnv allow` to trust the configuration
+
+### Getting Started
+
+```bash
+# Install dependencies
+pnpm install
+
+# Start development server
+pnpm dev
+
+# Build for production
+pnpm build
+```
+
+### Using just
+
+Common tasks are available via [just](https://github.com/casey/just):
+
+```bash
+just dev      # Start development server
+just install  # Install dependencies
+just build    # Build for production
 ```
