@@ -397,6 +397,26 @@ export function Terminal({ onCommand }: TerminalProps) {
       }
     });
 
+    // Handle Cmd+Arrow using xterm's custom key handler (browser intercepts these before onKey)
+    // Only intercept when Cmd is the only modifier (allow Shift+Cmd+Arrow etc. to pass through)
+    term.attachCustomKeyEventHandler((e: KeyboardEvent) => {
+      if (e.metaKey && !e.shiftKey && !e.altKey && !e.ctrlKey && (e.key === 'ArrowLeft' || e.key === 'ArrowRight')) {
+        if (e.type === 'keydown') {
+          if (e.key === 'ArrowLeft' && cursorPos > 0) {
+            // Cmd+ArrowLeft: Jump to beginning of line
+            term.write(`\x1b[${cursorPos}D`);
+            cursorPos = 0;
+          } else if (e.key === 'ArrowRight' && cursorPos < currentLine.length) {
+            // Cmd+ArrowRight: Jump to end of line
+            term.write(`\x1b[${currentLine.length - cursorPos}C`);
+            cursorPos = currentLine.length;
+          }
+        }
+        return false; // Prevent default handling
+      }
+      return true; // Allow normal handling
+    });
+
     // Use ResizeObserver to handle container resizes (from allotment panes)
     const resizeObserver = new ResizeObserver(() => {
       fitAddon.fit();
