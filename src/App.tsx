@@ -1,79 +1,35 @@
-import { useState, useEffect, useCallback, useRef } from 'react';
 import { Allotment } from 'allotment';
 import 'allotment/dist/style.css';
 import { Terminal } from './components/Terminal/Terminal';
-import { FileTree, type FileNode } from './components/FileTree/FileTree';
+import { FileTree } from './components/FileTree/FileTree';
 import { FileViewer } from './components/FileViewer/FileViewer';
 import { Instructions } from './components/Instructions/Instructions';
 import { executeCommand } from './lib/shell';
-import { initializeFs, readFile, readdir, stat } from './lib/fs';
 import { lessons } from './data/lessons';
 import { useLessonProgress } from './hooks/useLessonProgress';
+import { useFileTree } from './hooks/useFileTree';
+import { useTerminalLayout } from './hooks/useTerminalLayout';
 import './styles/variables.css';
 import styles from './App.module.css';
 
-async function buildFileTree(path: string): Promise<FileNode[]> {
-  try {
-    const entries = await readdir(path);
-    const nodes: FileNode[] = [];
-
-    for (const entry of entries) {
-      const fullPath = `${path}/${entry}`.replace('//', '/');
-      const stats = await stat(fullPath);
-
-      if (stats.type === 'dir') {
-        const children = await buildFileTree(fullPath);
-        nodes.push({ name: entry, type: 'directory', path: fullPath, children });
-      } else {
-        nodes.push({ name: entry, type: 'file', path: fullPath });
-      }
-    }
-
-    return nodes;
-  } catch {
-    return [];
-  }
-}
-
 function App() {
-  const [files, setFiles] = useState<FileNode[]>([]);
-  const [selectedFile, setSelectedFile] = useState<string | null>(null);
-  const [fileContent, setFileContent] = useState<string>('');
-  const [isTerminalExpanded, setIsTerminalExpanded] = useState(false);
-  const [isTerminalFullscreen, setIsTerminalFullscreen] = useState(false);
-  const [terminalSizes, setTerminalSizes] = useState<number[]>([]);
-  const savedSizesRef = useRef<number[]>([]);
-  const wasExpandedBeforeFullscreenRef = useRef(false);
+  const {
+    files,
+    selectedFile,
+    fileContent,
+    refreshFileTree,
+    handleFileSelect,
+    clearSelection,
+  } = useFileTree();
 
-  const handleTerminalExpandToggle = () => {
-    if (!isTerminalExpanded) {
-      // Save current sizes before expanding
-      savedSizesRef.current = terminalSizes;
-    }
-    setIsTerminalExpanded(!isTerminalExpanded);
-  };
-
-  const handleTerminalFullscreenToggle = () => {
-    if (!isTerminalFullscreen) {
-      // Save current expansion state before going fullscreen
-      wasExpandedBeforeFullscreenRef.current = isTerminalExpanded;
-      // When going fullscreen, also expand within center pane
-      if (!isTerminalExpanded) {
-        savedSizesRef.current = terminalSizes;
-        setIsTerminalExpanded(true);
-      }
-    } else {
-      // Restore previous expansion state when exiting fullscreen
-      setIsTerminalExpanded(wasExpandedBeforeFullscreenRef.current);
-    }
-    setIsTerminalFullscreen(!isTerminalFullscreen);
-  };
-
-  const handleVerticalSizeChange = (sizes: number[]) => {
-    if (!isTerminalExpanded) {
-      setTerminalSizes(sizes);
-    }
-  };
+  const {
+    isTerminalExpanded,
+    isTerminalFullscreen,
+    savedSizesRef,
+    handleTerminalExpandToggle,
+    handleTerminalFullscreenToggle,
+    handleVerticalSizeChange,
+  } = useTerminalLayout();
 
   const {
     currentLesson,
@@ -90,25 +46,6 @@ function App() {
     totalLessons,
   } = useLessonProgress(lessons);
 
-  const refreshFileTree = useCallback(async () => {
-    const tree = await buildFileTree('/repo');
-    setFiles(tree);
-  }, []);
-
-  useEffect(() => {
-    initializeFs().then(refreshFileTree);
-  }, [refreshFileTree]);
-
-  const handleFileSelect = async (path: string) => {
-    setSelectedFile(path);
-    try {
-      const content = await readFile(path);
-      setFileContent(content);
-    } catch {
-      setFileContent('');
-    }
-  };
-
   const handleCommand = async (command: string) => {
     const result = await executeCommand(command);
     await refreshFileTree();
@@ -116,8 +53,7 @@ function App() {
     // Reset lesson progress when environment is reset
     if (command.trim() === 'reset') {
       resetProgress();
-      setSelectedFile(null);
-      setFileContent('');
+      clearSelection();
     } else {
       // Check if current exercise is completed after each command
       await checkCurrentExercise(command);
