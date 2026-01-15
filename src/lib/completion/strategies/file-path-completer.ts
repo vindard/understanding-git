@@ -52,7 +52,9 @@ export class FilePathCompleter implements CompletionStrategy {
       }
 
       const entries = await fsLib.readdir(dirPath);
-      const matching = entries.filter(entry => entry.startsWith(prefix));
+      const matching = entries
+        .filter(entry => entry.startsWith(prefix))
+        .filter(entry => entry !== '.git');  // Hide .git from completions
 
       const suggestions: string[] = [];
       for (const entry of matching) {
