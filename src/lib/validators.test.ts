@@ -1,4 +1,5 @@
 import { describe, it, expect, vi, beforeEach } from 'vitest';
+import { CWD } from './config';
 
 // Mock the dependencies before importing the module that uses them
 vi.mock('./git', () => ({
@@ -38,7 +39,7 @@ describe('Lesson Validators', () => {
       const result = await validator?.();
 
       expect(result).toBe(true);
-      expect(fsLib.stat).toHaveBeenCalledWith('/repo/.git');
+      expect(fsLib.stat).toHaveBeenCalledWith(`${CWD}/.git`);
     });
 
     it('returns false when .git is a file (not directory)', async () => {
@@ -68,7 +69,7 @@ describe('Lesson Validators', () => {
       const result = await validator?.();
 
       expect(result).toBe(true);
-      expect(fsLib.stat).toHaveBeenCalledWith('/repo/README.md');
+      expect(fsLib.stat).toHaveBeenCalledWith(`${CWD}/README.md`);
     });
 
     it('returns false when file does not exist', async () => {
@@ -227,7 +228,7 @@ describe('Lesson Validators', () => {
       const result = await validator?.();
 
       expect(result).toBe(true);
-      expect(fsLib.readFile).toHaveBeenCalledWith('/repo/README.md');
+      expect(fsLib.readFile).toHaveBeenCalledWith(`${CWD}/README.md`);
     });
 
     it('returns false when file is empty', async () => {

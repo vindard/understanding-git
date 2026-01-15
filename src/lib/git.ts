@@ -1,7 +1,8 @@
 import git from 'isomorphic-git';
 import * as fsModule from './fs';
+import { CWD } from './config';
 
-const dir = '/repo';
+const dir = CWD;
 
 // Get fs dynamically since it can be reassigned on reset
 function getFs() {

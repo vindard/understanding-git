@@ -1,4 +1,5 @@
 import { describe, it, expect, vi, beforeEach } from 'vitest';
+import { CWD } from './config';
 
 // Mock the dependencies
 vi.mock('./fs', () => ({
@@ -106,7 +107,7 @@ describe('Tab Completion', () => {
       expect(result.suggestions).toContain('README.md');
       expect(result.suggestions).toContain('src/');
       expect(result.suggestions).toContain('package.json');
-      expect(fsLib.readdir).toHaveBeenCalledWith('/repo');
+      expect(fsLib.readdir).toHaveBeenCalledWith(CWD);
     });
 
     it('filters files by partial path', async () => {
@@ -237,7 +238,7 @@ describe('Tab Completion', () => {
 
       const result = await getCompletions('cat src/', 8);
 
-      expect(fsLib.readdir).toHaveBeenCalledWith('/repo/src');
+      expect(fsLib.readdir).toHaveBeenCalledWith(`${CWD}/src`);
       expect(result.suggestions).toContain('src/nested.txt');
       expect(result.suggestions).toContain('src/subdir/');
     });

@@ -1,7 +1,6 @@
 import * as fsLib from '../fs';
+import { CWD } from '../config';
 import type { CommandResult } from './types';
-
-const CWD = '/repo';
 
 function resolvePath(path: string): string {
   if (path.startsWith('/')) {

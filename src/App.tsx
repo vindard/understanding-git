@@ -5,6 +5,7 @@ import { FileTree } from './components/FileTree/FileTree';
 import { FileViewer } from './components/FileViewer/FileViewer';
 import { Instructions } from './components/Instructions/Instructions';
 import { executeCommand } from './lib/shell';
+import { CWD } from './lib/config';
 import { lessons } from './data/lessons';
 import { useLessonProgress } from './hooks/useLessonProgress';
 import { useFileTree } from './hooks/useFileTree';
@@ -103,7 +104,7 @@ function App() {
                         <>
                           <div className={styles.editorHeader}>
                             <span className={styles.editorFilename}>
-                              {selectedFile.replace('/repo/', '')}
+                              {selectedFile.replace(`${CWD}/`, '')}
                             </span>
                           </div>
                           <div className={styles.editorContent}>

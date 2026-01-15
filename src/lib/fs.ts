@@ -1,4 +1,5 @@
 import LightningFS from '@isomorphic-git/lightning-fs';
+import { CWD } from './config';
 
 const DB_NAME = 'git-learning-fs';
 
@@ -30,11 +31,11 @@ export async function resetFs(): Promise<void> {
   fs = new LightningFS(DB_NAME);
   // Create the repo directory, or clear it if it already exists (due to IndexedDB timing)
   try {
-    await fs.promises.mkdir('/repo');
+    await fs.promises.mkdir(CWD);
   } catch (err) {
     if ((err as { code?: string }).code === 'EEXIST') {
       // Directory exists from previous state - clear its contents
-      await clearDirectory('/repo');
+      await clearDirectory(CWD);
     } else {
       throw err;
     }

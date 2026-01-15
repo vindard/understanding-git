@@ -1,4 +1,5 @@
 import { describe, it, expect, vi, beforeEach } from 'vitest';
+import { CWD } from './config';
 
 // Mock the dependencies before importing
 vi.mock('./git', () => ({
@@ -46,9 +47,9 @@ describe('Shell Commands', () => {
   });
 
   describe('pwd command', () => {
-    it('returns /repo', async () => {
+    it('returns CWD', async () => {
       const result = await executeCommand('pwd');
-      expect(result).toEqual({ output: '/repo', success: true });
+      expect(result).toEqual({ output: CWD, success: true });
     });
   });
 
@@ -96,7 +97,7 @@ describe('Shell Commands', () => {
       const result = await executeCommand('ls');
       expect(result.success).toBe(true);
       expect(result.output).toBe('file1.txt\nfile2.txt\ndir');
-      expect(fsLib.readdir).toHaveBeenCalledWith('/repo');
+      expect(fsLib.readdir).toHaveBeenCalledWith(CWD);
     });
 
     it('lists files in specified directory', async () => {
@@ -104,7 +105,7 @@ describe('Shell Commands', () => {
 
       const result = await executeCommand('ls subdir');
       expect(result.success).toBe(true);
-      expect(fsLib.readdir).toHaveBeenCalledWith('/repo/subdir');
+      expect(fsLib.readdir).toHaveBeenCalledWith(`${CWD}/subdir`);
     });
 
     it('handles absolute paths', async () => {
@@ -122,7 +123,7 @@ describe('Shell Commands', () => {
       const result = await executeCommand('cat README.md');
       expect(result.success).toBe(true);
       expect(result.output).toBe('file content');
-      expect(fsLib.readFile).toHaveBeenCalledWith('/repo/README.md');
+      expect(fsLib.readFile).toHaveBeenCalledWith(`${CWD}/README.md`);
     });
 
     it('returns error when no file specified', async () => {
@@ -139,7 +140,7 @@ describe('Shell Commands', () => {
       const result = await executeCommand('mkdir newdir');
       expect(result.success).toBe(true);
       expect(result.output).toBe('');
-      expect(fsLib.mkdir).toHaveBeenCalledWith('/repo/newdir');
+      expect(fsLib.mkdir).toHaveBeenCalledWith(`${CWD}/newdir`);
     });
 
     it('returns error when no directory specified', async () => {
@@ -157,7 +158,7 @@ describe('Shell Commands', () => {
       const result = await executeCommand('touch newfile.txt');
       expect(result.success).toBe(true);
       expect(result.output).toBe('');
-      expect(fsLib.writeFile).toHaveBeenCalledWith('/repo/newfile.txt', '');
+      expect(fsLib.writeFile).toHaveBeenCalledWith(`${CWD}/newfile.txt`, '');
     });
 
     it('does not overwrite existing file', async () => {
@@ -182,7 +183,7 @@ describe('Shell Commands', () => {
 
       const result = await executeCommand('rm file.txt');
       expect(result.success).toBe(true);
-      expect(fsLib.unlink).toHaveBeenCalledWith('/repo/file.txt');
+      expect(fsLib.unlink).toHaveBeenCalledWith(`${CWD}/file.txt`);
     });
 
     it('refuses to remove directory without -r flag', async () => {

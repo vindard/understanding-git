@@ -1,4 +1,5 @@
 import { resetFs } from '../fs';
+import { CWD } from '../config';
 import { colors } from './colors';
 import type { CommandResult } from './types';
 
@@ -59,7 +60,7 @@ export async function handleEchoCommand(args: string[]): Promise<CommandResult> 
 }
 
 export async function handlePwdCommand(): Promise<CommandResult> {
-  return { output: '/repo', success: true };
+  return { output: CWD, success: true };
 }
 
 export async function handleHelpCommand(): Promise<CommandResult> {

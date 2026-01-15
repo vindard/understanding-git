@@ -1,4 +1,5 @@
 import * as gitLib from '../git';
+import { CWD } from '../config';
 import { colors } from './colors';
 import type { CommandResult } from './types';
 
@@ -8,7 +9,7 @@ export async function handleGitCommand(args: string[]): Promise<CommandResult> {
   switch (subcommand) {
     case 'init':
       await gitLib.gitInit();
-      return { output: 'Initialized empty Git repository in /repo/.git/', success: true };
+      return { output: `Initialized empty Git repository in ${CWD}/.git/`, success: true };
 
     case 'add':
       if (!args[1]) {

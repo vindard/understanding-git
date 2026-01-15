@@ -1,7 +1,6 @@
 import * as fsLib from '../../fs';
+import { CWD } from '../../config';
 import type { CompletionContext, CompletionResult, CompletionStrategy } from '../types';
-
-const CWD = '/repo';
 const PATH_COMMANDS = ['ls', 'cat', 'mkdir', 'touch', 'rm'];
 const GIT_PATH_SUBCOMMANDS = ['add'];
 

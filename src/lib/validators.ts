@@ -1,5 +1,6 @@
 import { gitStatus, gitLog } from './git';
 import { stat, readFile } from './fs';
+import { CWD } from './config';
 
 /**
  * Validator functions for lesson exercises.
@@ -8,7 +9,7 @@ import { stat, readFile } from './fs';
 
 export async function repoInitialized(): Promise<boolean> {
   try {
-    const gitDir = await stat('/repo/.git');
+    const gitDir = await stat(`${CWD}/.git`);
     return gitDir.type === 'dir';
   } catch {
     return false;
@@ -18,7 +19,7 @@ export async function repoInitialized(): Promise<boolean> {
 export function fileExists(path: string): () => Promise<boolean> {
   return async (): Promise<boolean> => {
     try {
-      await stat(`/repo/${path}`);
+      await stat(`${CWD}/${path}`);
       return true;
     } catch {
       return false;
@@ -81,7 +82,7 @@ export async function hasMultipleCommits(): Promise<boolean> {
 export function fileHasContent(path: string): () => Promise<boolean> {
   return async (): Promise<boolean> => {
     try {
-      const content = await readFile(`/repo/${path}`);
+      const content = await readFile(`${CWD}/${path}`);
       return content.trim().length > 0;
     } catch {
       return false;

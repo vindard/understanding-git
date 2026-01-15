@@ -1,5 +1,6 @@
 import { useState, useCallback, useEffect } from 'react';
 import { initializeFs, readFile, readdir, stat } from '../lib/fs';
+import { CWD } from '../lib/config';
 import type { FileNode } from '../components/FileTree/FileTree';
 
 async function buildFileTree(path: string): Promise<FileNode[]> {
@@ -40,7 +41,7 @@ export function useFileTree(): UseFileTreeReturn {
   const [fileContent, setFileContent] = useState<string>('');
 
   const refreshFileTree = useCallback(async () => {
-    const tree = await buildFileTree('/repo');
+    const tree = await buildFileTree(CWD);
     setFiles(tree);
   }, []);
 
