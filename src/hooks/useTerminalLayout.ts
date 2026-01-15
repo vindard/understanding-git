@@ -4,7 +4,7 @@ export interface UseTerminalLayoutReturn {
   isTerminalExpanded: boolean;
   isTerminalFullscreen: boolean;
   terminalSizes: number[];
-  savedSizesRef: React.RefObject<number[]>;
+  savedSizes: number[];
   handleTerminalExpandToggle: () => void;
   handleTerminalFullscreenToggle: () => void;
   handleVerticalSizeChange: (sizes: number[]) => void;
@@ -14,13 +14,13 @@ export function useTerminalLayout(): UseTerminalLayoutReturn {
   const [isTerminalExpanded, setIsTerminalExpanded] = useState(false);
   const [isTerminalFullscreen, setIsTerminalFullscreen] = useState(false);
   const [terminalSizes, setTerminalSizes] = useState<number[]>([]);
-  const savedSizesRef = useRef<number[]>([]);
+  const [savedSizes, setSavedSizes] = useState<number[]>([]);
   const wasExpandedBeforeFullscreenRef = useRef(false);
 
   const handleTerminalExpandToggle = useCallback(() => {
     if (!isTerminalExpanded) {
       // Save current sizes before expanding
-      savedSizesRef.current = terminalSizes;
+      setSavedSizes(terminalSizes);
     }
     setIsTerminalExpanded(!isTerminalExpanded);
   }, [isTerminalExpanded, terminalSizes]);
@@ -31,7 +31,7 @@ export function useTerminalLayout(): UseTerminalLayoutReturn {
       wasExpandedBeforeFullscreenRef.current = isTerminalExpanded;
       // When going fullscreen, also expand within center pane
       if (!isTerminalExpanded) {
-        savedSizesRef.current = terminalSizes;
+        setSavedSizes(terminalSizes);
         setIsTerminalExpanded(true);
       }
     } else {
@@ -51,7 +51,7 @@ export function useTerminalLayout(): UseTerminalLayoutReturn {
     isTerminalExpanded,
     isTerminalFullscreen,
     terminalSizes,
-    savedSizesRef,
+    savedSizes,
     handleTerminalExpandToggle,
     handleTerminalFullscreenToggle,
     handleVerticalSizeChange,

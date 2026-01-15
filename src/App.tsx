@@ -26,7 +26,7 @@ function App() {
   const {
     isTerminalExpanded,
     isTerminalFullscreen,
-    savedSizesRef,
+    savedSizes,
     handleTerminalExpandToggle,
     handleTerminalFullscreenToggle,
     handleVerticalSizeChange,
@@ -91,10 +91,10 @@ function App() {
           <div className={styles.centerPane}>
             <div className={styles.centerContent}>
               <Allotment
-                key={isTerminalExpanded ? 'expanded' : `collapsed-${savedSizesRef.current.join('-')}`}
+                key={isTerminalExpanded ? 'expanded' : `collapsed-${savedSizes.join('-')}`}
                 vertical
                 onChange={handleVerticalSizeChange}
-                defaultSizes={!isTerminalExpanded && savedSizesRef.current.length > 0 ? savedSizesRef.current : undefined}
+                defaultSizes={!isTerminalExpanded && savedSizes.length > 0 ? savedSizes : undefined}
               >
                 {/* Editor Panel */}
                 {!isTerminalExpanded && (
