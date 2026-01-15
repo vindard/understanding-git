@@ -101,7 +101,7 @@ describe('Tab Completion', () => {
       expect(fsLib.readdir).toHaveBeenCalledWith(CWD);
     });
 
-    it('excludes hidden files and directories', async () => {
+    it('includes hidden files and directories', async () => {
       vi.mocked(fsLib.readdir).mockResolvedValue([
         'README.md',
         '.git',
@@ -110,7 +110,7 @@ describe('Tab Completion', () => {
         'src',
       ]);
       vi.mocked(fsLib.stat).mockImplementation(async (path) => {
-        if (path.includes('src') || path.includes('.git')) return { type: 'dir' };
+        if (path.includes('src') || (path.includes('.git') && !path.includes('.gitignore'))) return { type: 'dir' };
         return { type: 'file' };
       });
 
@@ -118,9 +118,9 @@ describe('Tab Completion', () => {
 
       expect(result.suggestions).toContain('README.md');
       expect(result.suggestions).toContain('src/');
-      expect(result.suggestions).not.toContain('.git/');
-      expect(result.suggestions).not.toContain('.gitignore');
-      expect(result.suggestions).not.toContain('.env');
+      expect(result.suggestions).toContain('.git/');
+      expect(result.suggestions).toContain('.gitignore');
+      expect(result.suggestions).toContain('.env');
     });
 
     it('filters files by partial path', async () => {
@@ -224,6 +224,21 @@ describe('Tab Completion', () => {
 
       expect(result.suggestions).toContain('existing.txt');
     });
+
+    it('excludes hidden files for touch command', async () => {
+      vi.mocked(fsLib.readdir).mockResolvedValue([
+        'file.txt',
+        '.gitignore',
+        '.env',
+      ]);
+      vi.mocked(fsLib.stat).mockResolvedValue({ type: 'file' });
+
+      const result = await getCompletions('touch ', 6);
+
+      expect(result.suggestions).toContain('file.txt');
+      expect(result.suggestions).not.toContain('.gitignore');
+      expect(result.suggestions).not.toContain('.env');
+    });
   });
 
   describe('file path completion for rm', () => {
@@ -238,6 +253,26 @@ describe('Tab Completion', () => {
 
       expect(result.suggestions).toContain('file.txt');
       expect(result.suggestions).toContain('dir/');
+    });
+
+    it('includes hidden files (default behavior)', async () => {
+      vi.mocked(fsLib.readdir).mockResolvedValue([
+        'file.txt',
+        '.gitignore',
+        '.env',
+        '.git',
+      ]);
+      vi.mocked(fsLib.stat).mockImplementation(async (path) => {
+        if (path.includes('.git') && !path.includes('.gitignore')) return { type: 'dir' };
+        return { type: 'file' };
+      });
+
+      const result = await getCompletions('rm ', 3);
+
+      expect(result.suggestions).toContain('file.txt');
+      expect(result.suggestions).toContain('.gitignore');
+      expect(result.suggestions).toContain('.env');
+      expect(result.suggestions).toContain('.git/');
     });
   });
 

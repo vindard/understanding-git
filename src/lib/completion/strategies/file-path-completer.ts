@@ -23,8 +23,9 @@ export class FilePathCompleter implements CompletionStrategy {
   async complete(context: CompletionContext): Promise<CompletionResult> {
     const partial = context.parts[context.parts.length - 1] || '';
     const pathToComplete = context.endsWithSpace ? '' : partial;
+    const hideHidden = context.cmd === 'touch';  // touch shouldn't suggest hidden files
 
-    const suggestions = await this.completeFilePath(pathToComplete);
+    const suggestions = await this.completeFilePath(pathToComplete, hideHidden);
     const replaceFrom = context.endsWithSpace
       ? context.cursorPos
       : context.lineUpToCursor.lastIndexOf(partial);
@@ -36,7 +37,7 @@ export class FilePathCompleter implements CompletionStrategy {
     };
   }
 
-  private async completeFilePath(partial: string): Promise<string[]> {
+  private async completeFilePath(partial: string, hideHidden = false): Promise<string[]> {
     try {
       let dirPath: string;
       let prefix: string;
@@ -52,9 +53,10 @@ export class FilePathCompleter implements CompletionStrategy {
       }
 
       const entries = await fsLib.readdir(dirPath);
-      const matching = entries
-        .filter(entry => entry.startsWith(prefix))
-        .filter(entry => !entry.startsWith('.'));  // Hide hidden files/dirs from completions
+      let matching = entries.filter(entry => entry.startsWith(prefix));
+      if (hideHidden) {
+        matching = matching.filter(entry => !entry.startsWith('.'));
+      }
 
       const suggestions: string[] = [];
       for (const entry of matching) {
