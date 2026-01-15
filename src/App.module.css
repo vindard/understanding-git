@@ -163,6 +163,11 @@
   color: var(--color-text-secondary);
 }
 
+.terminalHeaderButtons {
+  display: flex;
+  gap: var(--spacing-xs);
+}
+
 .terminalExpandBtn {
   background: none;
   border: none;

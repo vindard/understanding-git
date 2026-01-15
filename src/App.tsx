@@ -40,8 +40,10 @@ function App() {
   const [selectedFile, setSelectedFile] = useState<string | null>(null);
   const [fileContent, setFileContent] = useState<string>('');
   const [isTerminalExpanded, setIsTerminalExpanded] = useState(false);
+  const [isTerminalFullscreen, setIsTerminalFullscreen] = useState(false);
   const [terminalSizes, setTerminalSizes] = useState<number[]>([]);
   const savedSizesRef = useRef<number[]>([]);
+  const wasExpandedBeforeFullscreenRef = useRef(false);
 
   const handleTerminalExpandToggle = () => {
     if (!isTerminalExpanded) {
@@ -49,6 +51,22 @@ function App() {
       savedSizesRef.current = terminalSizes;
     }
     setIsTerminalExpanded(!isTerminalExpanded);
+  };
+
+  const handleTerminalFullscreenToggle = () => {
+    if (!isTerminalFullscreen) {
+      // Save current expansion state before going fullscreen
+      wasExpandedBeforeFullscreenRef.current = isTerminalExpanded;
+      // When going fullscreen, also expand within center pane
+      if (!isTerminalExpanded) {
+        savedSizesRef.current = terminalSizes;
+        setIsTerminalExpanded(true);
+      }
+    } else {
+      // Restore previous expansion state when exiting fullscreen
+      setIsTerminalExpanded(wasExpandedBeforeFullscreenRef.current);
+    }
+    setIsTerminalFullscreen(!isTerminalFullscreen);
   };
 
   const handleVerticalSizeChange = (sizes: number[]) => {
@@ -114,20 +132,22 @@ function App() {
     <div className={styles.container}>
       <Allotment>
         {/* File Tree Sidebar */}
-        <Allotment.Pane preferredSize={250} minSize={150} maxSize={400}>
-          <div className={styles.sidebar}>
-            <div className={styles.sidebarHeader}>
-              Explorer
+        {!isTerminalFullscreen && (
+          <Allotment.Pane preferredSize={250} minSize={150} maxSize={400}>
+            <div className={styles.sidebar}>
+              <div className={styles.sidebarHeader}>
+                Explorer
+              </div>
+              <div className={styles.sidebarContent}>
+                <FileTree
+                  files={files}
+                  onFileSelect={handleFileSelect}
+                  selectedPath={selectedFile || undefined}
+                />
+              </div>
             </div>
-            <div className={styles.sidebarContent}>
-              <FileTree
-                files={files}
-                onFileSelect={handleFileSelect}
-                selectedPath={selectedFile || undefined}
-              />
-            </div>
-          </div>
-        </Allotment.Pane>
+          </Allotment.Pane>
+        )}
 
         {/* Center: Editor + Terminal stacked vertically */}
         <Allotment.Pane>
@@ -168,19 +188,46 @@ function App() {
                   <div className={styles.terminalPanel}>
                     <div className={styles.terminalHeader}>
                       <span className={styles.terminalTitle}>Terminal</span>
-                      <button
-                        className={styles.terminalExpandBtn}
-                        onClick={handleTerminalExpandToggle}
-                        title={isTerminalExpanded ? 'Collapse terminal' : 'Expand terminal'}
-                      >
-                        <svg width="12" height="12" viewBox="0 0 12 12" fill="none" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round">
-                          {isTerminalExpanded ? (
-                            <polyline points="2,4 6,8 10,4" />
-                          ) : (
-                            <polyline points="2,8 6,4 10,8" />
-                          )}
-                        </svg>
-                      </button>
+                      <div className={styles.terminalHeaderButtons}>
+                        {!isTerminalFullscreen && (
+                          <button
+                            className={styles.terminalExpandBtn}
+                            onClick={handleTerminalExpandToggle}
+                            title={isTerminalExpanded ? 'Collapse terminal' : 'Expand terminal'}
+                          >
+                            <svg width="12" height="12" viewBox="0 0 12 12" fill="none" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round">
+                              {isTerminalExpanded ? (
+                                <polyline points="2,4 6,8 10,4" />
+                              ) : (
+                                <polyline points="2,8 6,4 10,8" />
+                              )}
+                            </svg>
+                          </button>
+                        )}
+                        <button
+                          className={styles.terminalExpandBtn}
+                          onClick={handleTerminalFullscreenToggle}
+                          title={isTerminalFullscreen ? 'Exit fullscreen' : 'Fullscreen terminal'}
+                        >
+                          <svg width="12" height="12" viewBox="0 0 12 12" fill="none" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round">
+                            {isTerminalFullscreen ? (
+                              <>
+                                <polyline points="1,4 4,4 4,1" />
+                                <polyline points="8,1 8,4 11,4" />
+                                <polyline points="1,8 4,8 4,11" />
+                                <polyline points="8,11 8,8 11,8" />
+                              </>
+                            ) : (
+                              <>
+                                <polyline points="1,4 1,1 4,1" />
+                                <polyline points="8,1 11,1 11,4" />
+                                <polyline points="1,8 1,11 4,11" />
+                                <polyline points="11,8 11,11 8,11" />
+                              </>
+                            )}
+                          </svg>
+                        </button>
+                      </div>
                     </div>
                     <div className={styles.terminalContent}>
                       <Terminal onCommand={handleCommand} />
@@ -205,28 +252,30 @@ function App() {
         </Allotment.Pane>
 
         {/* Instructions Panel */}
-        <Allotment.Pane preferredSize={350} minSize={200} maxSize={500}>
-          <div className={styles.instructionsPanel}>
-            <div className={styles.panelHeader}>
-              Instructions
+        {!isTerminalFullscreen && (
+          <Allotment.Pane preferredSize={350} minSize={200} maxSize={500}>
+            <div className={styles.instructionsPanel}>
+              <div className={styles.panelHeader}>
+                Instructions
+              </div>
+              <div className={styles.panelContent}>
+                <Instructions
+                  lesson={currentLesson}
+                  currentExerciseIndex={currentExerciseIndex}
+                  completedExercises={completedExercises}
+                  isLessonComplete={isLessonComplete}
+                  isStateBroken={isStateBroken}
+                  onNext={goToNextLesson}
+                  onPrevious={goToPreviousLesson}
+                  hasNext={lessonIndex < totalLessons - 1}
+                  hasPrevious={lessonIndex > 0}
+                  lessonNumber={lessonIndex + 1}
+                  totalLessons={totalLessons}
+                />
+              </div>
             </div>
-            <div className={styles.panelContent}>
-              <Instructions
-                lesson={currentLesson}
-                currentExerciseIndex={currentExerciseIndex}
-                completedExercises={completedExercises}
-                isLessonComplete={isLessonComplete}
-                isStateBroken={isStateBroken}
-                onNext={goToNextLesson}
-                onPrevious={goToPreviousLesson}
-                hasNext={lessonIndex < totalLessons - 1}
-                hasPrevious={lessonIndex > 0}
-                lessonNumber={lessonIndex + 1}
-                totalLessons={totalLessons}
-              />
-            </div>
-          </div>
-        </Allotment.Pane>
+          </Allotment.Pane>
+        )}
       </Allotment>
     </div>
   );
