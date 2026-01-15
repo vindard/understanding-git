@@ -4,6 +4,21 @@ const DB_NAME = 'git-learning-fs';
 
 export let fs = new LightningFS(DB_NAME);
 
+// Recursively delete directory contents
+async function clearDirectory(path: string): Promise<void> {
+  const entries = await fs.promises.readdir(path);
+  for (const entry of entries) {
+    const fullPath = `${path}/${entry}`;
+    const stats = await fs.promises.stat(fullPath);
+    if (stats.isDirectory()) {
+      await clearDirectory(fullPath);
+      await fs.promises.rmdir(fullPath);
+    } else {
+      await fs.promises.unlink(fullPath);
+    }
+  }
+}
+
 export async function resetFs(): Promise<void> {
   // Delete the IndexedDB database and create a fresh one
   await new Promise<void>((resolve, reject) => {
@@ -13,8 +28,17 @@ export async function resetFs(): Promise<void> {
   });
   // Create a fresh filesystem
   fs = new LightningFS(DB_NAME);
-  // Create the repo directory
-  await fs.promises.mkdir('/repo');
+  // Create the repo directory, or clear it if it already exists (due to IndexedDB timing)
+  try {
+    await fs.promises.mkdir('/repo');
+  } catch (err) {
+    if ((err as { code?: string }).code === 'EEXIST') {
+      // Directory exists from previous state - clear its contents
+      await clearDirectory('/repo');
+    } else {
+      throw err;
+    }
+  }
 }
 
 export async function initializeFs(): Promise<void> {
