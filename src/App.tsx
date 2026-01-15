@@ -1,4 +1,4 @@
-import { useState, useEffect, useCallback } from 'react';
+import { useState, useEffect, useCallback, useRef } from 'react';
 import { Allotment } from 'allotment';
 import 'allotment/dist/style.css';
 import { Terminal } from './components/Terminal/Terminal';
@@ -39,6 +39,23 @@ function App() {
   const [files, setFiles] = useState<FileNode[]>([]);
   const [selectedFile, setSelectedFile] = useState<string | null>(null);
   const [fileContent, setFileContent] = useState<string>('');
+  const [isTerminalExpanded, setIsTerminalExpanded] = useState(false);
+  const [terminalSizes, setTerminalSizes] = useState<number[]>([]);
+  const savedSizesRef = useRef<number[]>([]);
+
+  const handleTerminalExpandToggle = () => {
+    if (!isTerminalExpanded) {
+      // Save current sizes before expanding
+      savedSizesRef.current = terminalSizes;
+    }
+    setIsTerminalExpanded(!isTerminalExpanded);
+  };
+
+  const handleVerticalSizeChange = (sizes: number[]) => {
+    if (!isTerminalExpanded) {
+      setTerminalSizes(sizes);
+    }
+  };
 
   const {
     currentLesson,
@@ -116,33 +133,58 @@ function App() {
         <Allotment.Pane>
           <div className={styles.centerPane}>
             <div className={styles.centerContent}>
-              <Allotment vertical>
+              <Allotment
+                key={isTerminalExpanded ? 'expanded' : `collapsed-${savedSizesRef.current.join('-')}`}
+                vertical
+                onChange={handleVerticalSizeChange}
+                defaultSizes={!isTerminalExpanded && savedSizesRef.current.length > 0 ? savedSizesRef.current : undefined}
+              >
                 {/* Editor Panel */}
-                <Allotment.Pane>
-                  <div className={styles.editorPanel}>
-                    {selectedFile ? (
-                      <>
-                        <div className={styles.editorHeader}>
-                          <span className={styles.editorFilename}>
-                            {selectedFile.replace('/repo/', '')}
-                          </span>
+                {!isTerminalExpanded && (
+                  <Allotment.Pane>
+                    <div className={styles.editorPanel}>
+                      {selectedFile ? (
+                        <>
+                          <div className={styles.editorHeader}>
+                            <span className={styles.editorFilename}>
+                              {selectedFile.replace('/repo/', '')}
+                            </span>
+                          </div>
+                          <div className={styles.editorContent}>
+                            <FileViewer content={fileContent} path={selectedFile} />
+                          </div>
+                        </>
+                      ) : (
+                        <div className={styles.editorPlaceholder}>
+                          Select a file to view its contents
                         </div>
-                        <div className={styles.editorContent}>
-                          <FileViewer content={fileContent} path={selectedFile} />
-                        </div>
-                      </>
-                    ) : (
-                      <div className={styles.editorPlaceholder}>
-                        Select a file to view its contents
-                      </div>
-                    )}
-                  </div>
-                </Allotment.Pane>
+                      )}
+                    </div>
+                  </Allotment.Pane>
+                )}
 
                 {/* Terminal Panel */}
-                <Allotment.Pane preferredSize={250} minSize={100} maxSize={500}>
+                <Allotment.Pane preferredSize={isTerminalExpanded ? undefined : 250} minSize={100} maxSize={isTerminalExpanded ? undefined : 500}>
                   <div className={styles.terminalPanel}>
-                    <Terminal onCommand={handleCommand} />
+                    <div className={styles.terminalHeader}>
+                      <span className={styles.terminalTitle}>Terminal</span>
+                      <button
+                        className={styles.terminalExpandBtn}
+                        onClick={handleTerminalExpandToggle}
+                        title={isTerminalExpanded ? 'Collapse terminal' : 'Expand terminal'}
+                      >
+                        <svg width="12" height="12" viewBox="0 0 12 12" fill="none" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round">
+                          {isTerminalExpanded ? (
+                            <polyline points="2,4 6,8 10,4" />
+                          ) : (
+                            <polyline points="2,8 6,4 10,8" />
+                          )}
+                        </svg>
+                      </button>
+                    </div>
+                    <div className={styles.terminalContent}>
+                      <Terminal onCommand={handleCommand} />
+                    </div>
                   </div>
                 </Allotment.Pane>
               </Allotment>
