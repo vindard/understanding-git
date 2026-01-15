@@ -24,6 +24,7 @@ describe('buildLineOutput', () => {
   it('should not add cursor movement when cursor is at end', () => {
     const result = buildLineOutput('test', 4, 0);
     // Should not contain cursor left movement (e.g., \x1b[2D)
+    // eslint-disable-next-line no-control-regex
     expect(result.output).not.toMatch(/\x1b\[\d+D/);
     // But should still contain the line content
     expect(result.output).toContain('test');

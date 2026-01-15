@@ -5,6 +5,7 @@ import { WebLinksAddon } from '@xterm/addon-web-links';
 import { getCompletions } from '../../lib/completion/index';
 import type { CommandResult } from '../../lib/commands/types';
 import { findPrevWordBoundary, findNextWordBoundary } from './utils/word-navigation';
+import { buildLineOutput } from './utils/line-output';
 import '@xterm/xterm/css/xterm.css';
 import styles from './Terminal.module.css';
 
@@ -102,15 +103,9 @@ export function Terminal({ onCommand }: TerminalProps) {
     };
 
     const updateLine = () => {
-      // Combine clear and redraw into a single atomic write to prevent cursor flicker
-      const clearLength = Math.max(currentLine.length, prevLineLength);
-      let output = '\r$ ' + ' '.repeat(clearLength) + '\r$ ' + currentLine;
-      const moveBack = currentLine.length - cursorPos;
-      if (moveBack > 0) {
-        output += `\x1b[${moveBack}D`;
-      }
+      const { output, newPrevLength } = buildLineOutput(currentLine, cursorPos, prevLineLength);
       term.write(output);
-      prevLineLength = currentLine.length;
+      prevLineLength = newPrevLength;
     };
 
     const applyCompletion = (completion: string, replaceFrom: number) => {
@@ -250,27 +245,7 @@ export function Terminal({ onCommand }: TerminalProps) {
           cursorPos++;
           term.write('\x1b[C');
         }
-      } else if (domEvent.key === 'ArrowUp') {
-        resetCompletion();
-        if (history.length > 0 && historyIndex > 0) {
-          historyIndex--;
-          currentLine = history[historyIndex];
-          cursorPos = currentLine.length;
-          updateLine();
-        }
-      } else if (domEvent.key === 'ArrowDown') {
-        resetCompletion();
-        if (historyIndex < history.length - 1) {
-          historyIndex++;
-          currentLine = history[historyIndex];
-          cursorPos = currentLine.length;
-          updateLine();
-        } else if (historyIndex === history.length - 1) {
-          historyIndex = history.length;
-          currentLine = '';
-          cursorPos = 0;
-          updateLine();
-        }
+      // ArrowUp/ArrowDown handled in attachCustomKeyEventHandler
       } else if (domEvent.key === 'Home') {
         resetCompletion();
         if (cursorPos > 0) {
@@ -375,9 +350,35 @@ export function Terminal({ onCommand }: TerminalProps) {
       }
     });
 
-    // Handle Cmd+Arrow using xterm's custom key handler (browser intercepts these before onKey)
-    // Only intercept when Cmd is the only modifier (allow Shift+Cmd+Arrow etc. to pass through)
+    // Intercept certain keys before xterm.js processes them
+    // Without this, xterm sends escape sequences that interfere with our line editing
     term.attachCustomKeyEventHandler((e: KeyboardEvent) => {
+      // Handle ArrowUp/ArrowDown here to prevent xterm from processing them
+      if (e.key === 'ArrowUp' && e.type === 'keydown') {
+        resetCompletion();
+        if (history.length > 0 && historyIndex > 0) {
+          historyIndex--;
+          currentLine = history[historyIndex];
+          cursorPos = currentLine.length;
+          updateLine();
+        }
+        return false;
+      }
+      if (e.key === 'ArrowDown' && e.type === 'keydown') {
+        resetCompletion();
+        if (historyIndex < history.length - 1) {
+          historyIndex++;
+          currentLine = history[historyIndex];
+          cursorPos = currentLine.length;
+          updateLine();
+        } else if (historyIndex === history.length - 1) {
+          historyIndex = history.length;
+          currentLine = '';
+          cursorPos = 0;
+          updateLine();
+        }
+        return false;
+      }
       if (e.metaKey && !e.shiftKey && !e.altKey && !e.ctrlKey && (e.key === 'ArrowLeft' || e.key === 'ArrowRight')) {
         if (e.type === 'keydown') {
           if (e.key === 'ArrowLeft' && cursorPos > 0) {
