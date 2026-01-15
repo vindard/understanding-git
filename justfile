@@ -25,3 +25,11 @@ preview:
 # Type check
 typecheck:
     pnpm tsc --noEmit
+
+# Run tests once
+test:
+    pnpm test:run
+
+# Run tests in watch mode
+test-watch:
+    pnpm test
