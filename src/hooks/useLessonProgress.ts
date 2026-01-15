@@ -1,5 +1,6 @@
 import { useState, useCallback } from 'react';
 import type { Lesson, LessonProgress } from '../types/lesson';
+import { repoIntact } from '../lib/gitStateHash';
 
 interface UseLessonProgressReturn {
   currentLesson: Lesson;
@@ -78,6 +79,12 @@ export function useLessonProgress(lessons: Lesson[]): UseLessonProgressReturn {
   const checkStateIntegrity = useCallback(async () => {
     if (!currentLesson || completedExercises.length === 0) {
       setIsStateBroken(false);
+      return;
+    }
+
+    // Check if .git directory has been tampered with
+    if (!await repoIntact()) {
+      setIsStateBroken(true);
       return;
     }
 

@@ -1,5 +1,6 @@
 import * as gitLib from '../git';
 import { CWD } from '../config';
+import { withHashUpdate } from '../gitStateHash';
 import { registerCommand, registerGitSubcommand } from './registry';
 import { colors } from './colors';
 import type { CommandResult } from './types';
@@ -9,14 +10,14 @@ async function handleGitCommand(args: string[]): Promise<CommandResult> {
 
   switch (subcommand) {
     case 'init':
-      await gitLib.gitInit();
+      await withHashUpdate(() => gitLib.gitInit());
       return { output: `Initialized empty Git repository in ${CWD}/.git/`, success: true };
 
     case 'add':
       if (!args[1]) {
         return { output: 'Nothing specified, nothing added.', success: false };
       }
-      await gitLib.gitAdd(args[1]);
+      await withHashUpdate(() => gitLib.gitAdd(args[1]));
       return { output: '', success: true };
 
     case 'commit': {
@@ -27,7 +28,7 @@ async function handleGitCommand(args: string[]): Promise<CommandResult> {
             (message.startsWith("'") && message.endsWith("'"))) {
           message = message.slice(1, -1);
         }
-        const sha = await gitLib.gitCommit(message);
+        const sha = await withHashUpdate(() => gitLib.gitCommit(message));
         return { output: `[main ${sha.slice(0, 7)}] ${message}`, success: true };
       }
       return { output: 'Please provide a commit message with -m', success: false };
@@ -80,7 +81,7 @@ async function handleGitCommand(args: string[]): Promise<CommandResult> {
 
     case 'branch': {
       if (args[1]) {
-        await gitLib.gitBranch(args[1]);
+        await withHashUpdate(() => gitLib.gitBranch(args[1]));
         return { output: '', success: true };
       }
       const branches = await gitLib.gitListBranches();
@@ -97,7 +98,7 @@ async function handleGitCommand(args: string[]): Promise<CommandResult> {
       if (!args[1]) {
         return { output: 'Please specify a branch', success: false };
       }
-      await gitLib.gitCheckout(args[1]);
+      await withHashUpdate(() => gitLib.gitCheckout(args[1]));
       return { output: `Switched to branch '${args[1]}'`, success: true };
 
     default:

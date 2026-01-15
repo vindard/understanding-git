@@ -1,5 +1,6 @@
 import { resetFs } from '../fs';
 import { CWD } from '../config';
+import { clearGitStateHash } from '../gitStateHash';
 import {
   registerCommand,
   getCommandsByCategory,
@@ -68,6 +69,7 @@ async function handleHelpCommand(): Promise<CommandResult> {
 
 async function handleResetCommand(): Promise<CommandResult> {
   await resetFs();
+  clearGitStateHash();
   return { output: 'Environment reset. Run "git init" to start fresh.', success: true };
 }
 
