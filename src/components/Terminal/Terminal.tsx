@@ -25,10 +25,17 @@ export function Terminal({ onCommand }: TerminalProps) {
     onCommandRef.current = onCommand;
   }, [onCommand]);
 
+  const welcomeMessage = "\x1b[2mType 'help' to see available commands, or 'git init' to get started\x1b[0m";
+
   const writeOutput = useCallback((term: XTerm, output: string) => {
     if (!output) return;
-    // Skip trailing newline if output contains clear screen sequence
+    // Handle clear screen - redraw welcome message after clearing
     const isClearScreen = output.includes('\x1b[2J');
+    if (isClearScreen) {
+      term.write('\x1b[2J\x1b[H');  // Clear and move to home
+      term.write(welcomeMessage + '\r\n\r\n');
+      return;
+    }
     const lines = output.split('\n');
     lines.forEach((line, i) => {
       term.write(line);
@@ -36,9 +43,7 @@ export function Terminal({ onCommand }: TerminalProps) {
         term.write('\r\n');
       }
     });
-    if (!isClearScreen) {
-      term.write('\r\n');
-    }
+    term.write('\r\n');
   }, []);
 
   useEffect(() => {
@@ -177,6 +182,8 @@ export function Terminal({ onCommand }: TerminalProps) {
       prevLineLength = currentLine.length;
     };
 
+    // Welcome message (dimmed)
+    term.write(welcomeMessage + '\r\n\r\n');
     term.write('$ ');
 
     term.onKey(({ key, domEvent }) => {
@@ -345,9 +352,10 @@ export function Terminal({ onCommand }: TerminalProps) {
           updateLine();
         }
       } else if (domEvent.ctrlKey && domEvent.key === 'l') {
-        // Ctrl+L: Clear screen
+        // Ctrl+L: Clear screen (preserve welcome message)
         resetCompletion();
         term.write('\x1b[2J\x1b[H');
+        term.write(welcomeMessage + '\r\n\r\n');
         term.write('$ ' + currentLine);
         // Restore cursor position
         const moveBack = currentLine.length - cursorPos;
