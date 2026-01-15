@@ -184,7 +184,10 @@ function App() {
                       </div>
                     </div>
                     <div className={styles.terminalContent}>
-                      <Terminal onCommand={handleCommand} />
+                      <Terminal
+                        onCommand={handleCommand}
+                        canAdvanceLesson={isLessonComplete && lessonIndex < totalLessons - 1}
+                      />
                     </div>
                   </div>
                 </Allotment.Pane>

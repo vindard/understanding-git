@@ -6,22 +6,34 @@ import { getCompletions } from '../../lib/completion/index';
 import type { CommandResult } from '../../lib/commands/types';
 import { findPrevWordBoundary, findNextWordBoundary } from './utils/word-navigation';
 import { buildLineOutput } from './utils/line-output';
+import { isMacPlatform, getShortcutHint, shouldShowHint } from './utils/shortcut-hint';
 import '@xterm/xterm/css/xterm.css';
 import styles from './Terminal.module.css';
 
 interface TerminalProps {
   onCommand?: (command: string) => Promise<CommandResult>;
+  canAdvanceLesson?: boolean;
 }
 
-export function Terminal({ onCommand }: TerminalProps) {
+export function Terminal({ onCommand, canAdvanceLesson }: TerminalProps) {
   const terminalRef = useRef<HTMLDivElement>(null);
   const xtermRef = useRef<XTerm | null>(null);
   const onCommandRef = useRef(onCommand);
+  const canAdvanceLessonRef = useRef(canAdvanceLesson);
+  const clearHintRef = useRef<(() => void) | null>(null);
 
-  // Keep ref updated with latest callback
+  // Keep refs updated with latest values
   useEffect(() => {
     onCommandRef.current = onCommand;
   }, [onCommand]);
+
+  useEffect(() => {
+    canAdvanceLessonRef.current = canAdvanceLesson;
+    // Clear hint when we can no longer advance (e.g., moved to next lesson)
+    if (!canAdvanceLesson && clearHintRef.current) {
+      clearHintRef.current();
+    }
+  }, [canAdvanceLesson]);
 
   const welcomeMessage = "\x1b[2mType 'help' to see available commands, or 'git init' to get started\x1b[0m";
 
@@ -75,6 +87,32 @@ export function Terminal({ onCommand }: TerminalProps) {
     let prevLineLength = 0;  // Track previous line length to clear properly
     const history: string[] = [];
     let historyIndex = -1;
+    let hintVisible = false;
+
+    // Shortcut hint for advancing to next lesson
+    const shortcutHint = getShortcutHint(isMacPlatform());
+
+    const showHint = () => {
+      if (shouldShowHint(currentLine, canAdvanceLessonRef.current ?? false, hintVisible)) {
+        // Write a space for cursor to sit on, then the dim hint
+        term.write(` \x1b[2m${shortcutHint}\x1b[0m`);
+        // Move cursor back to the space (before the hint text)
+        term.write(`\x1b[${shortcutHint.length + 1}D`);
+        hintVisible = true;
+      }
+    };
+
+    const clearHint = () => {
+      if (hintVisible) {
+        // Clear the hint by overwriting with spaces (including the leading space)
+        term.write(' '.repeat(shortcutHint.length + 1));
+        term.write(`\x1b[${shortcutHint.length + 1}D`);
+        hintVisible = false;
+      }
+    };
+
+    // Store clearHint in ref so it can be called from outside this effect
+    clearHintRef.current = clearHint;
 
     // Completion state
     let completionState: {
@@ -150,12 +188,14 @@ export function Terminal({ onCommand }: TerminalProps) {
     // Welcome message (dimmed)
     term.write(welcomeMessage + '\r\n\r\n');
     term.write('$ ');
+    showHint();
 
     term.onKey(({ key, domEvent }) => {
       const printable = !domEvent.altKey && !domEvent.ctrlKey && !domEvent.metaKey;
 
       if (domEvent.key === 'Enter') {
         resetCompletion();
+        clearHint();
         const cmd = currentLine.trim();
         const isClearCmd = cmd === 'clear';
 
@@ -177,12 +217,15 @@ export function Terminal({ onCommand }: TerminalProps) {
           onCommandRef.current(cmd).then((result) => {
             writeOutput(term, result.output);
             term.write('$ ');
+            showHint();
           }).catch((err) => {
             writeOutput(term, `Error: ${err.message}`);
             term.write('$ ');
+            showHint();
           });
         } else {
           term.write('$ ');
+          showHint();
         }
       } else if (domEvent.key === 'Backspace') {
         resetCompletion();
@@ -204,12 +247,20 @@ export function Terminal({ onCommand }: TerminalProps) {
             cursorPos--;
             updateLine();
           }
+          // Show hint if line is now empty
+          if (currentLine === '') {
+            showHint();
+          }
         }
       } else if (domEvent.key === 'Delete') {
         resetCompletion();
         if (cursorPos < currentLine.length) {
           currentLine = currentLine.slice(0, cursorPos) + currentLine.slice(cursorPos + 1);
           updateLine();
+          // Show hint if line is now empty
+          if (currentLine === '') {
+            showHint();
+          }
         }
       } else if (domEvent.key === 'ArrowLeft') {
         resetCompletion();
@@ -279,6 +330,9 @@ export function Terminal({ onCommand }: TerminalProps) {
           currentLine = currentLine.slice(cursorPos);
           cursorPos = 0;
           updateLine();
+          if (currentLine === '') {
+            showHint();
+          }
         }
       } else if (domEvent.ctrlKey && domEvent.key === 'k') {
         // Ctrl+K: Delete from cursor to end of line
@@ -286,6 +340,9 @@ export function Terminal({ onCommand }: TerminalProps) {
         if (cursorPos < currentLine.length) {
           currentLine = currentLine.slice(0, cursorPos);
           updateLine();
+          if (currentLine === '') {
+            showHint();
+          }
         }
       } else if (domEvent.ctrlKey && domEvent.key === 'w') {
         // Ctrl+W: Delete previous word
@@ -295,6 +352,9 @@ export function Terminal({ onCommand }: TerminalProps) {
           currentLine = currentLine.slice(0, newPos) + currentLine.slice(cursorPos);
           cursorPos = newPos;
           updateLine();
+          if (currentLine === '') {
+            showHint();
+          }
         }
       } else if (domEvent.ctrlKey && domEvent.key === 'l') {
         // Ctrl+L: Clear screen (preserve welcome message)
@@ -343,6 +403,7 @@ export function Terminal({ onCommand }: TerminalProps) {
         }
       } else if (printable && key.length === 1) {
         resetCompletion();
+        clearHint();
         // Insert character at cursor position
         currentLine = currentLine.slice(0, cursorPos) + key + currentLine.slice(cursorPos);
         cursorPos++;
