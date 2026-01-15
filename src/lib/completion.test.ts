@@ -101,6 +101,28 @@ describe('Tab Completion', () => {
       expect(fsLib.readdir).toHaveBeenCalledWith(CWD);
     });
 
+    it('excludes hidden files and directories', async () => {
+      vi.mocked(fsLib.readdir).mockResolvedValue([
+        'README.md',
+        '.git',
+        '.gitignore',
+        '.env',
+        'src',
+      ]);
+      vi.mocked(fsLib.stat).mockImplementation(async (path) => {
+        if (path.includes('src') || path.includes('.git')) return { type: 'dir' };
+        return { type: 'file' };
+      });
+
+      const result = await getCompletions('git add ', 8);
+
+      expect(result.suggestions).toContain('README.md');
+      expect(result.suggestions).toContain('src/');
+      expect(result.suggestions).not.toContain('.git/');
+      expect(result.suggestions).not.toContain('.gitignore');
+      expect(result.suggestions).not.toContain('.env');
+    });
+
     it('filters files by partial path', async () => {
       vi.mocked(fsLib.readdir).mockResolvedValue(['README.md', 'README.txt', 'other.md']);
       vi.mocked(fsLib.stat).mockResolvedValue({ type: 'file' });
