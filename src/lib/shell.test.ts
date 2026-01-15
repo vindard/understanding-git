@@ -218,6 +218,54 @@ describe('Shell Commands', () => {
       expect(result.success).toBe(false);
       expect(result.output).toContain('missing operand');
     });
+
+    it('recursively removes directory with nested files', async () => {
+      // Mock stat to return dir for directory, file for files
+      vi.mocked(fsLib.stat).mockImplementation(async (path) => {
+        if (path === `${CWD}/mydir` || path === `${CWD}/mydir/subdir`) {
+          return { type: 'dir' };
+        }
+        return { type: 'file' };
+      });
+
+      // First call returns dir contents, second call returns nested dir contents
+      vi.mocked(fsLib.readdir)
+        .mockResolvedValueOnce(['file1.txt', 'subdir'])  // mydir contents
+        .mockResolvedValueOnce(['nested.txt']);          // subdir contents
+
+      vi.mocked(fsLib.unlink).mockResolvedValue(undefined);
+      vi.mocked(fsLib.rmdir).mockResolvedValue(undefined);
+
+      const result = await executeCommand('rm -r mydir');
+
+      expect(result.success).toBe(true);
+      // Should have deleted nested file, then subdir, then file1, then mydir
+      expect(fsLib.unlink).toHaveBeenCalledWith(`${CWD}/mydir/subdir/nested.txt`);
+      expect(fsLib.unlink).toHaveBeenCalledWith(`${CWD}/mydir/file1.txt`);
+      expect(fsLib.rmdir).toHaveBeenCalledWith(`${CWD}/mydir/subdir`);
+      expect(fsLib.rmdir).toHaveBeenCalledWith(`${CWD}/mydir`);
+    });
+  });
+
+  describe('edge cases', () => {
+    it('handles empty command gracefully', async () => {
+      const result = await executeCommand('');
+      expect(result.success).toBe(false);
+      expect(result.output).toContain('Command not found');
+    });
+
+    it('handles whitespace-only command', async () => {
+      const result = await executeCommand('   ');
+      expect(result.success).toBe(false);
+      expect(result.output).toContain('Command not found');
+    });
+
+    it('handles command with extra spaces between args', async () => {
+      const result = await executeCommand('echo   hello    world');
+      // Extra spaces are collapsed by split(/\s+/)
+      expect(result.success).toBe(true);
+      expect(result.output).toBe('hello world');
+    });
   });
 
   describe('git init', () => {
