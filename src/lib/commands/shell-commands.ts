@@ -1,43 +1,42 @@
 import { resetFs } from '../fs';
 import { CWD } from '../config';
+import {
+  registerCommand,
+  getCommandsByCategory,
+  getGitSubcommands,
+} from './registry';
 import { colors } from './colors';
 import type { CommandResult } from './types';
 
 function formatHelpOutput(): string {
   const { dim, reset, yellow, cyan } = colors;
 
+  // Build help sections from registry data
+  const fileCommands = getCommandsByCategory('file');
+  const shellCommands = getCommandsByCategory('shell');
+  const gitSubcommands = getGitSubcommands();
+
   const sections = [
     {
       title: 'File commands',
-      commands: [
-        ['ls', 'List directory contents'],
-        ['cat <file>', 'Display file contents'],
-        ['touch <file>', 'Create an empty file'],
-        ['mkdir <dir>', 'Create a directory'],
-        ['rm <file>', 'Remove a file'],
-        ['echo <text>', 'Display text'],
-        ['pwd', 'Print working directory'],
-      ],
+      commands: fileCommands.map(cmd => {
+        const usage = cmd.usage ? ` ${cmd.usage}` : '';
+        return [`${cmd.name}${usage}`, cmd.description];
+      }),
     },
     {
       title: 'Other commands',
-      commands: [
-        ['clear', 'Clear the terminal screen'],
-        ['reset', 'Reset the environment to start fresh'],
-        ['help', 'Show this help message'],
-      ],
+      commands: shellCommands.map(cmd => {
+        const usage = cmd.usage ? ` ${cmd.usage}` : '';
+        return [`${cmd.name}${usage}`, cmd.description];
+      }),
     },
     {
       title: 'Git commands',
-      commands: [
-        ['git init', 'Create an empty Git repository'],
-        ['git status', 'Show the working tree status'],
-        ['git add <file>', 'Add file contents to the staging area'],
-        ['git commit -m <msg>', 'Record changes to the repository'],
-        ['git log', 'Show commit logs'],
-        ['git branch [name]', 'List branches or create a new branch'],
-        ['git checkout <branch>', 'Switch to a branch'],
-      ],
+      commands: gitSubcommands.map(sub => {
+        const usage = sub.usage ? ` ${sub.usage}` : '';
+        return [`git ${sub.name}${usage}`, sub.description];
+      }),
     },
   ];
 
@@ -76,3 +75,40 @@ export async function handleClearCommand(): Promise<CommandResult> {
   // Return escape sequence to clear screen and move cursor to top
   return { output: '\x1b[2J\x1b[H', success: true };
 }
+
+// Register shell commands
+registerCommand({
+  name: 'echo',
+  description: 'Display text',
+  usage: '<text>',
+  handler: handleEchoCommand,
+  category: 'shell',
+});
+
+registerCommand({
+  name: 'pwd',
+  description: 'Print working directory',
+  handler: handlePwdCommand,
+  category: 'shell',
+});
+
+registerCommand({
+  name: 'clear',
+  description: 'Clear the terminal screen',
+  handler: handleClearCommand,
+  category: 'shell',
+});
+
+registerCommand({
+  name: 'reset',
+  description: 'Reset the environment to start fresh',
+  handler: handleResetCommand,
+  category: 'shell',
+});
+
+registerCommand({
+  name: 'help',
+  description: 'Show this help message',
+  handler: handleHelpCommand,
+  category: 'shell',
+});

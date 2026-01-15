@@ -1,5 +1,6 @@
 import * as fsLib from '../fs';
 import { CWD } from '../config';
+import { registerCommand } from './registry';
 import type { CommandResult } from './types';
 
 function resolvePath(path: string): string {
@@ -84,3 +85,43 @@ async function removeRecursive(path: string): Promise<void> {
   }
   await fsLib.rmdir(path);
 }
+
+// Register file commands
+registerCommand({
+  name: 'ls',
+  description: 'List directory contents',
+  handler: handleLsCommand,
+  category: 'file',
+});
+
+registerCommand({
+  name: 'cat',
+  description: 'Display file contents',
+  usage: '<file>',
+  handler: handleCatCommand,
+  category: 'file',
+});
+
+registerCommand({
+  name: 'touch',
+  description: 'Create an empty file',
+  usage: '<file>',
+  handler: handleTouchCommand,
+  category: 'file',
+});
+
+registerCommand({
+  name: 'mkdir',
+  description: 'Create a directory',
+  usage: '<dir>',
+  handler: handleMkdirCommand,
+  category: 'file',
+});
+
+registerCommand({
+  name: 'rm',
+  description: 'Remove a file',
+  usage: '<file>',
+  handler: handleRmCommand,
+  category: 'file',
+});

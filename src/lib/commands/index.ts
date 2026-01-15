@@ -1,20 +1,21 @@
+/**
+ * Command Dispatcher
+ *
+ * This module serves as the entry point for command execution.
+ * It imports command modules (which self-register) and uses
+ * the registry for dispatch, eliminating the need for a switch statement.
+ */
+
 import { colors } from './colors';
-import { handleGitCommand } from './git-commands';
-import {
-  handleLsCommand,
-  handleCatCommand,
-  handleMkdirCommand,
-  handleTouchCommand,
-  handleRmCommand,
-} from './file-commands';
-import {
-  handleEchoCommand,
-  handlePwdCommand,
-  handleHelpCommand,
-  handleResetCommand,
-  handleClearCommand,
-} from './shell-commands';
+import { getCommand } from './registry';
 import type { CommandResult } from './types';
+
+// Import command modules to trigger their registration
+// Order matters: file and git commands should register before shell
+// commands that depend on them (like help)
+import './file-commands';
+import './git-commands';
+import './shell-commands';
 
 export type { CommandResult } from './types';
 
@@ -24,32 +25,11 @@ export async function executeCommand(command: string): Promise<CommandResult> {
   const args = parts.slice(1);
 
   try {
-    switch (cmd) {
-      case 'git':
-        return await handleGitCommand(args);
-      case 'ls':
-        return await handleLsCommand(args);
-      case 'cat':
-        return await handleCatCommand(args);
-      case 'echo':
-        return await handleEchoCommand(args);
-      case 'pwd':
-        return await handlePwdCommand();
-      case 'mkdir':
-        return await handleMkdirCommand(args);
-      case 'touch':
-        return await handleTouchCommand(args);
-      case 'rm':
-        return await handleRmCommand(args);
-      case 'help':
-        return await handleHelpCommand();
-      case 'reset':
-        return await handleResetCommand();
-      case 'clear':
-        return await handleClearCommand();
-      default:
-        return { output: `Command not found: ${cmd}`, success: false };
+    const commandDef = getCommand(cmd);
+    if (commandDef) {
+      return await commandDef.handler(args);
     }
+    return { output: `Command not found: ${cmd}`, success: false };
   } catch (error) {
     return {
       output: `${colors.red}Error: ${error instanceof Error ? error.message : String(error)}${colors.reset}`,

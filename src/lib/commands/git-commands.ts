@@ -1,5 +1,6 @@
 import * as gitLib from '../git';
 import { CWD } from '../config';
+import { registerCommand, registerGitSubcommand } from './registry';
 import { colors } from './colors';
 import type { CommandResult } from './types';
 
@@ -103,3 +104,20 @@ export async function handleGitCommand(args: string[]): Promise<CommandResult> {
       return { output: `git: '${subcommand}' is not a git command.`, success: false };
   }
 }
+
+// Register the git command
+registerCommand({
+  name: 'git',
+  description: 'Git version control',
+  handler: handleGitCommand,
+  category: 'git',
+});
+
+// Register git subcommands for completion and documentation
+registerGitSubcommand({ name: 'init', description: 'Create an empty Git repository' });
+registerGitSubcommand({ name: 'status', description: 'Show the working tree status' });
+registerGitSubcommand({ name: 'add', description: 'Add file contents to the staging area', usage: '<file>' });
+registerGitSubcommand({ name: 'commit', description: 'Record changes to the repository', usage: '-m <msg>' });
+registerGitSubcommand({ name: 'log', description: 'Show commit logs' });
+registerGitSubcommand({ name: 'branch', description: 'List branches or create a new branch', usage: '[name]' });
+registerGitSubcommand({ name: 'checkout', description: 'Switch to a branch', usage: '<branch>' });
