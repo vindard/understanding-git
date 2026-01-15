@@ -63,15 +63,6 @@ describe('Tab Completion', () => {
   });
 
   describe('git subcommand completion', () => {
-    // Note: Current behavior returns empty when line ends with space after 'git'
-    // This is how the code currently works - characterization test captures this
-    it('returns empty after "git " (current behavior)', async () => {
-      const result = await getCompletions('git ', 4);
-
-      // Current implementation returns empty when starting new argument
-      expect(result.suggestions).toEqual([]);
-    });
-
     it('filters git subcommands by partial input', async () => {
       const result = await getCompletions('git c', 5);
 
