@@ -82,33 +82,20 @@ describe('Lesson Validators', () => {
     });
   });
 
-  describe('hasUntrackedFiles (exercise 2-2)', () => {
-    it('returns true when there are untracked files', async () => {
-      // Untracked: head=0, workdir=2, stage=0
-      vi.mocked(gitLib.gitStatus).mockResolvedValue([
-        ['README.md', 0, 2, 0],
-      ]);
+  describe('fileExists for git status observation (exercise 2-2)', () => {
+    // Exercise 2-2 uses fileExists('README.md') since hasUntrackedFiles becomes false after staging
+    it('returns true when README.md exists', async () => {
+      vi.mocked(fsLib.stat).mockResolvedValue({ type: 'file' });
 
       const validator = getValidator('lesson-2', '2-2');
       const result = await validator?.();
 
       expect(result).toBe(true);
+      expect(fsLib.stat).toHaveBeenCalledWith(`${CWD}/README.md`);
     });
 
-    it('returns false when no untracked files', async () => {
-      // Tracked file: head=1, workdir=1, stage=1
-      vi.mocked(gitLib.gitStatus).mockResolvedValue([
-        ['README.md', 1, 1, 1],
-      ]);
-
-      const validator = getValidator('lesson-2', '2-2');
-      const result = await validator?.();
-
-      expect(result).toBe(false);
-    });
-
-    it('returns false on error', async () => {
-      vi.mocked(gitLib.gitStatus).mockRejectedValue(new Error('Not a git repo'));
+    it('returns false when README.md does not exist', async () => {
+      vi.mocked(fsLib.stat).mockRejectedValue(new Error('ENOENT'));
 
       const validator = getValidator('lesson-2', '2-2');
       const result = await validator?.();
@@ -154,8 +141,10 @@ describe('Lesson Validators', () => {
     });
   });
 
-  describe('hasStagedFiles (exercise 2-4, 4-2, 5-2)', () => {
-    it('returns true when files are staged (stage=2)', async () => {
+  describe('fileStaged for git status observation (exercise 2-4)', () => {
+    // Exercise 2-4 uses fileStaged('README.md') since hasStagedFiles becomes false after commit
+    // Note: stage=2 is for newly added files, stage=3 is for modified existing files
+    it('returns true when README.md is staged (stage=2, new file)', async () => {
       vi.mocked(gitLib.gitStatus).mockResolvedValue([
         ['README.md', 0, 2, 2],
       ]);
@@ -166,12 +155,36 @@ describe('Lesson Validators', () => {
       expect(result).toBe(true);
     });
 
+    it('returns false when README.md is not staged', async () => {
+      vi.mocked(gitLib.gitStatus).mockResolvedValue([
+        ['README.md', 0, 2, 0],
+      ]);
+
+      const validator = getValidator('lesson-2', '2-4');
+      const result = await validator?.();
+
+      expect(result).toBe(false);
+    });
+  });
+
+  describe('hasStagedFiles (exercise 4-2, 5-2)', () => {
+    it('returns true when files are staged (stage=2)', async () => {
+      vi.mocked(gitLib.gitStatus).mockResolvedValue([
+        ['README.md', 0, 2, 2],
+      ]);
+
+      const validator = getValidator('lesson-4', '4-2');
+      const result = await validator?.();
+
+      expect(result).toBe(true);
+    });
+
     it('returns true when files are staged (stage=3, modified)', async () => {
       vi.mocked(gitLib.gitStatus).mockResolvedValue([
         ['README.md', 1, 2, 3],
       ]);
 
-      const validator = getValidator('lesson-2', '2-4');
+      const validator = getValidator('lesson-4', '4-2');
       const result = await validator?.();
 
       expect(result).toBe(true);
@@ -182,7 +195,7 @@ describe('Lesson Validators', () => {
         ['README.md', 0, 2, 0],
       ]);
 
-      const validator = getValidator('lesson-2', '2-4');
+      const validator = getValidator('lesson-4', '4-2');
       const result = await validator?.();
 
       expect(result).toBe(false);

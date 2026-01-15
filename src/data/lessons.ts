@@ -42,7 +42,7 @@ export const lessons: Lesson[] = [
         id: '2-2',
         instruction: 'Run <code>git status</code> to see the untracked file.',
         hint: 'Type: git status',
-        validate: validators.hasUntrackedFiles,
+        validate: validators.fileExists('README.md'),  // Use fileExists since hasUntrackedFiles becomes false after staging
         successMessage: 'See the red "??" next to README.md? That means it\'s untracked.',
         commandPattern: /^git\s+status$/i,
       },
@@ -58,7 +58,7 @@ export const lessons: Lesson[] = [
         id: '2-4',
         instruction: 'Run <code>git status</code> again to see the staged file (shown in green).',
         hint: 'Type: git status',
-        validate: validators.hasStagedFiles,
+        validate: validators.fileStaged('README.md'),  // Check specific file since hasStagedFiles becomes false after commit
         successMessage: 'The green "A" means the file is staged and ready to commit!',
         commandPattern: /^git\s+status$/i,
       },
