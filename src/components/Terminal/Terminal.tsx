@@ -27,6 +27,8 @@ export function Terminal({ onCommand }: TerminalProps) {
 
   const writeOutput = useCallback((term: XTerm, output: string) => {
     if (!output) return;
+    // Skip trailing newline if output contains clear screen sequence
+    const isClearScreen = output.includes('\x1b[2J');
     const lines = output.split('\n');
     lines.forEach((line, i) => {
       term.write(line);
@@ -34,7 +36,9 @@ export function Terminal({ onCommand }: TerminalProps) {
         term.write('\r\n');
       }
     });
-    term.write('\r\n');
+    if (!isClearScreen) {
+      term.write('\r\n');
+    }
   }, []);
 
   useEffect(() => {
@@ -153,8 +157,13 @@ export function Terminal({ onCommand }: TerminalProps) {
 
       if (domEvent.key === 'Enter') {
         resetCompletion();
-        term.write('\r\n');
         const cmd = currentLine.trim();
+        const isClearCmd = cmd === 'clear';
+
+        // Skip newline for clear command to avoid flicker
+        if (!isClearCmd) {
+          term.write('\r\n');
+        }
 
         if (cmd) {
           history.push(cmd);
@@ -163,6 +172,7 @@ export function Terminal({ onCommand }: TerminalProps) {
 
         currentLine = '';
         cursorPos = 0;
+        prevLineLength = 0;
 
         if (cmd && onCommandRef.current) {
           onCommandRef.current(cmd).then((result) => {
