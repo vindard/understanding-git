@@ -10,13 +10,13 @@ function resolvePath(path: string): string {
   return `${CWD}/${path}`;
 }
 
-export async function handleLsCommand(args: string[]): Promise<CommandResult> {
+async function handleLsCommand(args: string[]): Promise<CommandResult> {
   const path = args[0] ? resolvePath(args[0]) : CWD;
   const files = await fsLib.readdir(path);
   return { output: files.join('\n'), success: true };
 }
 
-export async function handleCatCommand(args: string[]): Promise<CommandResult> {
+async function handleCatCommand(args: string[]): Promise<CommandResult> {
   if (!args[0]) {
     return { output: 'cat: missing file operand', success: false };
   }
@@ -25,7 +25,7 @@ export async function handleCatCommand(args: string[]): Promise<CommandResult> {
   return { output: content, success: true };
 }
 
-export async function handleMkdirCommand(args: string[]): Promise<CommandResult> {
+async function handleMkdirCommand(args: string[]): Promise<CommandResult> {
   if (!args[0]) {
     return { output: 'mkdir: missing operand', success: false };
   }
@@ -34,7 +34,7 @@ export async function handleMkdirCommand(args: string[]): Promise<CommandResult>
   return { output: '', success: true };
 }
 
-export async function handleTouchCommand(args: string[]): Promise<CommandResult> {
+async function handleTouchCommand(args: string[]): Promise<CommandResult> {
   if (!args[0]) {
     return { output: 'touch: missing file operand', success: false };
   }
@@ -47,7 +47,7 @@ export async function handleTouchCommand(args: string[]): Promise<CommandResult>
   return { output: '', success: true };
 }
 
-export async function handleRmCommand(args: string[]): Promise<CommandResult> {
+async function handleRmCommand(args: string[]): Promise<CommandResult> {
   const recursive = args[0] === '-r' || args[0] === '-rf';
   const targets = recursive ? args.slice(1) : args;
 

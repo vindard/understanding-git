@@ -4,7 +4,7 @@ import { registerCommand, registerGitSubcommand } from './registry';
 import { colors } from './colors';
 import type { CommandResult } from './types';
 
-export async function handleGitCommand(args: string[]): Promise<CommandResult> {
+async function handleGitCommand(args: string[]): Promise<CommandResult> {
   const subcommand = args[0];
 
   switch (subcommand) {

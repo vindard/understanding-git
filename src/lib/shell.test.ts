@@ -27,7 +27,7 @@ vi.mock('./fs', () => ({
 
 import * as gitLib from './git';
 import * as fsLib from './fs';
-import { executeCommand } from './shell';
+import { executeCommand } from './commands';
 
 describe('Shell Commands', () => {
   beforeEach(() => {

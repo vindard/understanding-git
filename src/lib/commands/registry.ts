@@ -1,4 +1,4 @@
-import type { CommandResult } from './types';
+import type { CommandHandler } from './types';
 
 /**
  * Command Registry - Central registration point for all shell commands.
@@ -16,8 +16,6 @@ import type { CommandResult } from './types';
  */
 
 export type CommandCategory = 'file' | 'git' | 'shell';
-
-export type CommandHandler = (args: string[]) => Promise<CommandResult>;
 
 export interface CommandDefinition {
   name: string;

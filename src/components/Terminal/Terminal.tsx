@@ -2,15 +2,11 @@ import { useEffect, useRef, useCallback } from 'react';
 import { Terminal as XTerm } from '@xterm/xterm';
 import { FitAddon } from '@xterm/addon-fit';
 import { WebLinksAddon } from '@xterm/addon-web-links';
-import { getCompletions } from '../../lib/completion';
+import { getCompletions } from '../../lib/completion/index';
+import type { CommandResult } from '../../lib/commands/types';
 import { findPrevWordBoundary, findNextWordBoundary } from './utils/word-navigation';
 import '@xterm/xterm/css/xterm.css';
 import styles from './Terminal.module.css';
-
-interface CommandResult {
-  output: string;
-  success: boolean;
-}
 
 interface TerminalProps {
   onCommand?: (command: string) => Promise<CommandResult>;

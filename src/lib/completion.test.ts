@@ -13,7 +13,7 @@ vi.mock('./git', () => ({
 
 import * as fsLib from './fs';
 import * as gitLib from './git';
-import { getCompletions } from './completion';
+import { getCompletions } from './completion/index';
 
 describe('Tab Completion', () => {
   beforeEach(() => {

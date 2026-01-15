@@ -4,7 +4,7 @@ import { Terminal } from './components/Terminal/Terminal';
 import { FileTree } from './components/FileTree/FileTree';
 import { FileViewer } from './components/FileViewer/FileViewer';
 import { Instructions } from './components/Instructions/Instructions';
-import { executeCommand } from './lib/shell';
+import { executeCommand } from './lib/commands';
 import { CWD } from './lib/config';
 import { lessons } from './data/lessons';
 import { useLessonProgress } from './hooks/useLessonProgress';

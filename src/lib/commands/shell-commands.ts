@@ -54,24 +54,24 @@ function formatHelpOutput(): string {
   return lines.join('\n').trimEnd();
 }
 
-export async function handleEchoCommand(args: string[]): Promise<CommandResult> {
+async function handleEchoCommand(args: string[]): Promise<CommandResult> {
   return { output: args.join(' '), success: true };
 }
 
-export async function handlePwdCommand(): Promise<CommandResult> {
+async function handlePwdCommand(): Promise<CommandResult> {
   return { output: CWD, success: true };
 }
 
-export async function handleHelpCommand(): Promise<CommandResult> {
+async function handleHelpCommand(): Promise<CommandResult> {
   return { output: formatHelpOutput(), success: true };
 }
 
-export async function handleResetCommand(): Promise<CommandResult> {
+async function handleResetCommand(): Promise<CommandResult> {
   await resetFs();
   return { output: 'Environment reset. Run "git init" to start fresh.', success: true };
 }
 
-export async function handleClearCommand(): Promise<CommandResult> {
+async function handleClearCommand(): Promise<CommandResult> {
   // Return escape sequence to clear screen and move cursor to top
   return { output: '\x1b[2J\x1b[H', success: true };
 }
