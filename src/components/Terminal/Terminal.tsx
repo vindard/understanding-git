@@ -111,6 +111,33 @@ export function Terminal({ onCommand }: TerminalProps) {
       prevLineLength = currentLine.length;
     };
 
+    const findPrevWordBoundary = (): number => {
+      // Find word boundary (stop at space or special chars like / | . - _)
+      let newPos = cursorPos - 1;
+      // Skip any trailing spaces/delimiters
+      while (newPos > 0 && /[\s\/|.\-_]/.test(currentLine[newPos])) {
+        newPos--;
+      }
+      // Move until we hit a delimiter or start of line
+      while (newPos > 0 && !/[\s\/|.\-_]/.test(currentLine[newPos - 1])) {
+        newPos--;
+      }
+      return newPos;
+    };
+
+    const findNextWordBoundary = (): number => {
+      let newPos = cursorPos;
+      // Skip current word characters
+      while (newPos < currentLine.length && !/[\s\/|.\-_]/.test(currentLine[newPos])) {
+        newPos++;
+      }
+      // Skip any spaces/delimiters
+      while (newPos < currentLine.length && /[\s\/|.\-_]/.test(currentLine[newPos])) {
+        newPos++;
+      }
+      return newPos;
+    };
+
     const applyCompletion = (completion: string, replaceFrom: number) => {
       const beforeReplace = currentLine.slice(0, replaceFrom);
       currentLine = beforeReplace + completion;
@@ -188,9 +215,23 @@ export function Terminal({ onCommand }: TerminalProps) {
       } else if (domEvent.key === 'Backspace') {
         resetCompletion();
         if (cursorPos > 0) {
-          currentLine = currentLine.slice(0, cursorPos - 1) + currentLine.slice(cursorPos);
-          cursorPos--;
-          updateLine();
+          if (domEvent.metaKey) {
+            // Cmd+Backspace: Delete from cursor to beginning of line
+            currentLine = currentLine.slice(cursorPos);
+            cursorPos = 0;
+            updateLine();
+          } else if (domEvent.altKey) {
+            // Option+Backspace: Delete previous word
+            const newPos = findPrevWordBoundary();
+            currentLine = currentLine.slice(0, newPos) + currentLine.slice(cursorPos);
+            cursorPos = newPos;
+            updateLine();
+          } else {
+            // Regular Backspace: Delete one character
+            currentLine = currentLine.slice(0, cursorPos - 1) + currentLine.slice(cursorPos);
+            cursorPos--;
+            updateLine();
+          }
         }
       } else if (domEvent.key === 'Delete') {
         resetCompletion();
@@ -200,13 +241,35 @@ export function Terminal({ onCommand }: TerminalProps) {
         }
       } else if (domEvent.key === 'ArrowLeft') {
         resetCompletion();
-        if (cursorPos > 0) {
+        if (domEvent.altKey) {
+          // Option+ArrowLeft: Jump to previous word boundary
+          if (cursorPos > 0) {
+            const newPos = findPrevWordBoundary();
+            const moveBy = cursorPos - newPos;
+            if (moveBy > 0) {
+              term.write(`\x1b[${moveBy}D`);
+              cursorPos = newPos;
+            }
+          }
+        } else if (cursorPos > 0) {
+          // Regular ArrowLeft: Move one character
           cursorPos--;
           term.write('\x1b[D');
         }
       } else if (domEvent.key === 'ArrowRight') {
         resetCompletion();
-        if (cursorPos < currentLine.length) {
+        if (domEvent.altKey) {
+          // Option+ArrowRight: Jump to next word boundary
+          if (cursorPos < currentLine.length) {
+            const newPos = findNextWordBoundary();
+            const moveBy = newPos - cursorPos;
+            if (moveBy > 0) {
+              term.write(`\x1b[${moveBy}C`);
+              cursorPos = newPos;
+            }
+          }
+        } else if (cursorPos < currentLine.length) {
+          // Regular ArrowRight: Move one character
           cursorPos++;
           term.write('\x1b[C');
         }
@@ -242,6 +305,54 @@ export function Terminal({ onCommand }: TerminalProps) {
         if (cursorPos < currentLine.length) {
           term.write(`\x1b[${currentLine.length - cursorPos}C`);
           cursorPos = currentLine.length;
+        }
+      } else if (domEvent.ctrlKey && domEvent.key === 'a') {
+        // Ctrl+A: Move cursor to beginning of line
+        resetCompletion();
+        if (cursorPos > 0) {
+          term.write(`\x1b[${cursorPos}D`);
+          cursorPos = 0;
+        }
+      } else if (domEvent.ctrlKey && domEvent.key === 'e') {
+        // Ctrl+E: Move cursor to end of line
+        resetCompletion();
+        if (cursorPos < currentLine.length) {
+          term.write(`\x1b[${currentLine.length - cursorPos}C`);
+          cursorPos = currentLine.length;
+        }
+      } else if (domEvent.ctrlKey && domEvent.key === 'u') {
+        // Ctrl+U: Delete from cursor to beginning of line
+        resetCompletion();
+        if (cursorPos > 0) {
+          currentLine = currentLine.slice(cursorPos);
+          cursorPos = 0;
+          updateLine();
+        }
+      } else if (domEvent.ctrlKey && domEvent.key === 'k') {
+        // Ctrl+K: Delete from cursor to end of line
+        resetCompletion();
+        if (cursorPos < currentLine.length) {
+          currentLine = currentLine.slice(0, cursorPos);
+          updateLine();
+        }
+      } else if (domEvent.ctrlKey && domEvent.key === 'w') {
+        // Ctrl+W: Delete previous word
+        resetCompletion();
+        if (cursorPos > 0) {
+          const newPos = findPrevWordBoundary();
+          currentLine = currentLine.slice(0, newPos) + currentLine.slice(cursorPos);
+          cursorPos = newPos;
+          updateLine();
+        }
+      } else if (domEvent.ctrlKey && domEvent.key === 'l') {
+        // Ctrl+L: Clear screen
+        resetCompletion();
+        term.write('\x1b[2J\x1b[H');
+        term.write('$ ' + currentLine);
+        // Restore cursor position
+        const moveBack = currentLine.length - cursorPos;
+        if (moveBack > 0) {
+          term.write(`\x1b[${moveBack}D`);
         }
       } else if (domEvent.key === 'Tab') {
         domEvent.preventDefault();
