@@ -3,6 +3,7 @@ import { Terminal as XTerm } from '@xterm/xterm';
 import { FitAddon } from '@xterm/addon-fit';
 import { WebLinksAddon } from '@xterm/addon-web-links';
 import { getCompletions } from '../../lib/completion';
+import { findPrevWordBoundary, findNextWordBoundary } from './utils/word-navigation';
 import '@xterm/xterm/css/xterm.css';
 import styles from './Terminal.module.css';
 
@@ -116,33 +117,6 @@ export function Terminal({ onCommand }: TerminalProps) {
       prevLineLength = currentLine.length;
     };
 
-    const findPrevWordBoundary = (): number => {
-      // Find word boundary (stop at space or special chars like / | . - _)
-      let newPos = cursorPos - 1;
-      // Skip any trailing spaces/delimiters
-      while (newPos > 0 && /[\s\/|.\-_]/.test(currentLine[newPos])) {
-        newPos--;
-      }
-      // Move until we hit a delimiter or start of line
-      while (newPos > 0 && !/[\s\/|.\-_]/.test(currentLine[newPos - 1])) {
-        newPos--;
-      }
-      return newPos;
-    };
-
-    const findNextWordBoundary = (): number => {
-      let newPos = cursorPos;
-      // Skip current word characters
-      while (newPos < currentLine.length && !/[\s\/|.\-_]/.test(currentLine[newPos])) {
-        newPos++;
-      }
-      // Skip any spaces/delimiters
-      while (newPos < currentLine.length && /[\s\/|.\-_]/.test(currentLine[newPos])) {
-        newPos++;
-      }
-      return newPos;
-    };
-
     const applyCompletion = (completion: string, replaceFrom: number) => {
       const beforeReplace = currentLine.slice(0, replaceFrom);
       currentLine = beforeReplace + completion;
@@ -229,7 +203,7 @@ export function Terminal({ onCommand }: TerminalProps) {
             updateLine();
           } else if (domEvent.altKey) {
             // Option+Backspace: Delete previous word
-            const newPos = findPrevWordBoundary();
+            const newPos = findPrevWordBoundary(currentLine, cursorPos);
             currentLine = currentLine.slice(0, newPos) + currentLine.slice(cursorPos);
             cursorPos = newPos;
             updateLine();
@@ -251,7 +225,7 @@ export function Terminal({ onCommand }: TerminalProps) {
         if (domEvent.altKey) {
           // Option+ArrowLeft: Jump to previous word boundary
           if (cursorPos > 0) {
-            const newPos = findPrevWordBoundary();
+            const newPos = findPrevWordBoundary(currentLine, cursorPos);
             const moveBy = cursorPos - newPos;
             if (moveBy > 0) {
               term.write(`\x1b[${moveBy}D`);
@@ -268,7 +242,7 @@ export function Terminal({ onCommand }: TerminalProps) {
         if (domEvent.altKey) {
           // Option+ArrowRight: Jump to next word boundary
           if (cursorPos < currentLine.length) {
-            const newPos = findNextWordBoundary();
+            const newPos = findNextWordBoundary(currentLine, cursorPos);
             const moveBy = newPos - cursorPos;
             if (moveBy > 0) {
               term.write(`\x1b[${moveBy}C`);
@@ -346,7 +320,7 @@ export function Terminal({ onCommand }: TerminalProps) {
         // Ctrl+W: Delete previous word
         resetCompletion();
         if (cursorPos > 0) {
-          const newPos = findPrevWordBoundary();
+          const newPos = findPrevWordBoundary(currentLine, cursorPos);
           currentLine = currentLine.slice(0, newPos) + currentLine.slice(cursorPos);
           cursorPos = newPos;
           updateLine();
