@@ -7,12 +7,65 @@ const CWD = '/repo';
 // ANSI color codes
 const colors = {
   reset: '\x1b[0m',
+  dim: '\x1b[2m',
   red: '\x1b[31m',
   green: '\x1b[32m',
   yellow: '\x1b[33m',
   blue: '\x1b[34m',
   cyan: '\x1b[36m',
 };
+
+function formatHelpOutput(): string {
+  const { dim, reset, yellow, cyan } = colors;
+
+  const sections = [
+    {
+      title: 'File commands',
+      commands: [
+        ['ls', 'List directory contents'],
+        ['cat <file>', 'Display file contents'],
+        ['touch <file>', 'Create an empty file'],
+        ['mkdir <dir>', 'Create a directory'],
+        ['rm <file>', 'Remove a file'],
+        ['echo <text>', 'Display text'],
+        ['pwd', 'Print working directory'],
+      ],
+    },
+    {
+      title: 'Other commands',
+      commands: [
+        ['clear', 'Clear the terminal screen'],
+        ['reset', 'Reset the environment to start fresh'],
+        ['help', 'Show this help message'],
+      ],
+    },
+    {
+      title: 'Git commands',
+      commands: [
+        ['git init', 'Create an empty Git repository'],
+        ['git status', 'Show the working tree status'],
+        ['git add <file>', 'Add file contents to the staging area'],
+        ['git commit -m <msg>', 'Record changes to the repository'],
+        ['git log', 'Show commit logs'],
+        ['git branch [name]', 'List branches or create a new branch'],
+        ['git checkout <branch>', 'Switch to a branch'],
+      ],
+    },
+  ];
+
+  const lines: string[] = [];
+  lines.push(`${yellow}Understanding Git${reset} - Interactive Git Learning Environment\n`);
+
+  for (const section of sections) {
+    lines.push(`${dim}${section.title}${reset}`);
+    for (const [cmd, desc] of section.commands) {
+      lines.push(`   ${cyan}${cmd.padEnd(22)}${reset} ${desc}`);
+    }
+    lines.push('');
+  }
+
+  return lines.join('\n').trimEnd();
+}
 
 function resolvePath(path: string): string {
   if (path.startsWith('/')) {
@@ -51,7 +104,7 @@ export async function executeCommand(command: string): Promise<CommandResult> {
         return await handleRmCommand(args);
       case 'help':
         return {
-          output: 'Available commands: git, ls, cat, echo, pwd, mkdir, touch, rm, reset, clear, help',
+          output: formatHelpOutput(),
           success: true,
         };
       case 'reset':
