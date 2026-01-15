@@ -1,6 +1,5 @@
+import { getGitSubcommandNames } from '../../commands/registry';
 import type { CompletionContext, CompletionResult, CompletionStrategy } from '../types';
-
-const GIT_SUBCOMMANDS = ['init', 'add', 'commit', 'status', 'log', 'branch', 'checkout'];
 
 export class GitSubcommandCompleter implements CompletionStrategy {
   canHandle(context: CompletionContext): boolean {
@@ -12,7 +11,8 @@ export class GitSubcommandCompleter implements CompletionStrategy {
 
   async complete(context: CompletionContext): Promise<CompletionResult> {
     const partial = context.parts[1];
-    const suggestions = GIT_SUBCOMMANDS.filter(sub => sub.startsWith(partial));
+    const gitSubcommands = getGitSubcommandNames();
+    const suggestions = gitSubcommands.filter(sub => sub.startsWith(partial));
     const replaceFrom = context.lineUpToCursor.lastIndexOf(partial);
     return {
       suggestions,

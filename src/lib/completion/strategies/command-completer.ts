@@ -1,6 +1,5 @@
+import { getCommandNames } from '../../commands/registry';
 import type { CompletionContext, CompletionResult, CompletionStrategy } from '../types';
-
-const COMMANDS = ['git', 'ls', 'cat', 'echo', 'pwd', 'mkdir', 'touch', 'rm', 'reset', 'clear', 'help'];
 
 export class CommandCompleter implements CompletionStrategy {
   canHandle(context: CompletionContext): boolean {
@@ -11,7 +10,8 @@ export class CommandCompleter implements CompletionStrategy {
 
   async complete(context: CompletionContext): Promise<CompletionResult> {
     const partial = context.parts[0] || '';
-    const suggestions = COMMANDS.filter(cmd => cmd.startsWith(partial));
+    const commands = getCommandNames();
+    const suggestions = commands.filter(cmd => cmd.startsWith(partial));
     return {
       suggestions,
       replaceFrom: 0,

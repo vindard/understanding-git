@@ -1,4 +1,9 @@
 import type { CompletionContext, CompletionResult, CompletionStrategy } from './types';
+
+// Import commands module to ensure registry is populated before completion
+// strategies try to access it
+import '../commands';
+
 import { CommandCompleter } from './strategies/command-completer';
 import { GitSubcommandCompleter } from './strategies/git-subcommand-completer';
 import { FilePathCompleter } from './strategies/file-path-completer';
