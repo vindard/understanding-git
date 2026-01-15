@@ -1,3 +1,4 @@
+import { useEffect } from 'react';
 import { Allotment } from 'allotment';
 import 'allotment/dist/style.css';
 import { Terminal } from './components/Terminal/Terminal';
@@ -5,6 +6,7 @@ import { FileTree } from './components/FileTree/FileTree';
 import { FileViewer } from './components/FileViewer/FileViewer';
 import { Instructions } from './components/Instructions/Instructions';
 import { executeCommand } from './lib/commands';
+import { setCurrentExercise } from './lib/completion';
 import { CWD } from './lib/config';
 import { lessons } from './data/lessons';
 import { useLessonProgress } from './hooks/useLessonProgress';
@@ -45,6 +47,12 @@ function App() {
     lessonIndex,
     totalLessons,
   } = useLessonProgress(lessons);
+
+  // Update completion system with current exercise for lesson-aware suggestions
+  useEffect(() => {
+    const exercise = currentLesson?.exercises[currentExerciseIndex] ?? null;
+    setCurrentExercise(exercise);
+  }, [currentLesson, currentExerciseIndex]);
 
   const handleCommand = async (command: string) => {
     const result = await executeCommand(command);
