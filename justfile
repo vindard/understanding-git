@@ -33,3 +33,15 @@ test:
 # Run tests in watch mode
 test-watch:
     pnpm test
+
+# Run all checks (typecheck, lint, test, build)
+check:
+    @echo "Running typecheck..."
+    @just typecheck
+    @echo "Running linter..."
+    @just lint
+    @echo "Running tests..."
+    @just test
+    @echo "Running build..."
+    @just build
+    @echo "All checks passed!"
