@@ -353,6 +353,10 @@ export function Terminal({ onCommand }: TerminalProps) {
     // Intercept certain keys before xterm.js processes them
     // Without this, xterm sends escape sequences that interfere with our line editing
     term.attachCustomKeyEventHandler((e: KeyboardEvent) => {
+      // Let Cmd/Ctrl+Enter bubble up for global handling (next lesson shortcut)
+      if (e.key === 'Enter' && (e.metaKey || e.ctrlKey) && e.type === 'keydown') {
+        return false; // Don't let xterm handle it, let it bubble to window
+      }
       // Handle ArrowUp/ArrowDown here to prevent xterm from processing them
       if (e.key === 'ArrowUp' && e.type === 'keydown') {
         resetCompletion();

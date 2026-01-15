@@ -54,6 +54,18 @@ function App() {
     setCurrentExercise(exercise);
   }, [currentLesson, currentExerciseIndex]);
 
+  // Cmd+Enter (Mac) or Ctrl+Enter (Windows/Linux) to advance to next lesson when ready
+  useEffect(() => {
+    const handleKeyDown = (e: KeyboardEvent) => {
+      if (e.key === 'Enter' && (e.metaKey || e.ctrlKey) && isLessonComplete && lessonIndex < totalLessons - 1) {
+        e.preventDefault();
+        goToNextLesson();
+      }
+    };
+    window.addEventListener('keydown', handleKeyDown);
+    return () => window.removeEventListener('keydown', handleKeyDown);
+  }, [isLessonComplete, lessonIndex, totalLessons, goToNextLesson]);
+
   const handleCommand = async (command: string) => {
     const result = await executeCommand(command);
     await refreshFileTree();
