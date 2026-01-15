@@ -65,6 +65,7 @@ export function Terminal({ onCommand }: TerminalProps) {
 
     let currentLine = '';
     let cursorPos = 0;
+    let prevLineLength = 0;  // Track previous line length to clear properly
     const history: string[] = [];
     let historyIndex = -1;
 
@@ -94,18 +95,16 @@ export function Terminal({ onCommand }: TerminalProps) {
       completionState = null;
     };
 
-    const clearLine = () => {
-      // Move cursor to start of input and clear
-      term.write('\r$ ' + ' '.repeat(currentLine.length) + '\r$ ');
-    };
-
-    const redrawLine = () => {
-      term.write(currentLine);
-      // Move cursor back to correct position
+    const updateLine = () => {
+      // Combine clear and redraw into a single atomic write to prevent cursor flicker
+      const clearLength = Math.max(currentLine.length, prevLineLength);
+      let output = '\r$ ' + ' '.repeat(clearLength) + '\r$ ' + currentLine;
       const moveBack = currentLine.length - cursorPos;
       if (moveBack > 0) {
-        term.write(`\x1b[${moveBack}D`);
+        output += `\x1b[${moveBack}D`;
       }
+      term.write(output);
+      prevLineLength = currentLine.length;
     };
 
     const applyCompletion = (completion: string, replaceFrom: number) => {
@@ -125,23 +124,26 @@ export function Terminal({ onCommand }: TerminalProps) {
 
     const showCompletionsInitial = (suggestions: string[], activeIndex: number) => {
       // Update command line in place, show suggestions below, return cursor to command line
-      clearLine();
-      redrawLine();
-      term.write('\r\n');                                      // Move to next line
-      term.write(renderSuggestionsLine(suggestions, activeIndex));
-      term.write('\x1b[A');                                    // Move back up to command line
-      term.write(`\r$ ${currentLine}`);                        // Position at end of command
+      // Use single atomic write to prevent cursor flicker
+      const clearLength = Math.max(currentLine.length, prevLineLength);
+      const suggestionsLine = renderSuggestionsLine(suggestions, activeIndex);
+      const output = '\r$ ' + ' '.repeat(clearLength) + '\r$ ' + currentLine +
+        '\r\n' + suggestionsLine +
+        '\x1b[A' + `\r$ ${currentLine}`;
+      term.write(output);
+      prevLineLength = currentLine.length;
     };
 
     const updateCompletionsInPlace = (suggestions: string[], activeIndex: number) => {
       // Update command line, then update suggestions line below
-      clearLine();
-      redrawLine();
-      term.write('\r\n');                                      // Move to suggestions line
-      term.write('\x1b[2K');                                   // Clear it
-      term.write(renderSuggestionsLine(suggestions, activeIndex));
-      term.write('\x1b[A');                                    // Move back up to command line
-      term.write(`\r$ ${currentLine}`);                        // Position at end of command
+      // Use single atomic write to prevent cursor flicker
+      const clearLength = Math.max(currentLine.length, prevLineLength);
+      const suggestionsLine = renderSuggestionsLine(suggestions, activeIndex);
+      const output = '\r$ ' + ' '.repeat(clearLength) + '\r$ ' + currentLine +
+        '\r\n' + '\x1b[2K' + suggestionsLine +
+        '\x1b[A' + `\r$ ${currentLine}`;
+      term.write(output);
+      prevLineLength = currentLine.length;
     };
 
     term.write('$ ');
@@ -178,15 +180,13 @@ export function Terminal({ onCommand }: TerminalProps) {
         if (cursorPos > 0) {
           currentLine = currentLine.slice(0, cursorPos - 1) + currentLine.slice(cursorPos);
           cursorPos--;
-          clearLine();
-          redrawLine();
+          updateLine();
         }
       } else if (domEvent.key === 'Delete') {
         resetCompletion();
         if (cursorPos < currentLine.length) {
           currentLine = currentLine.slice(0, cursorPos) + currentLine.slice(cursorPos + 1);
-          clearLine();
-          redrawLine();
+          updateLine();
         }
       } else if (domEvent.key === 'ArrowLeft') {
         resetCompletion();
@@ -204,24 +204,22 @@ export function Terminal({ onCommand }: TerminalProps) {
         resetCompletion();
         if (history.length > 0 && historyIndex > 0) {
           historyIndex--;
-          clearLine();
           currentLine = history[historyIndex];
           cursorPos = currentLine.length;
-          redrawLine();
+          updateLine();
         }
       } else if (domEvent.key === 'ArrowDown') {
         resetCompletion();
         if (historyIndex < history.length - 1) {
           historyIndex++;
-          clearLine();
           currentLine = history[historyIndex];
           cursorPos = currentLine.length;
-          redrawLine();
+          updateLine();
         } else if (historyIndex === history.length - 1) {
           historyIndex = history.length;
-          clearLine();
           currentLine = '';
           cursorPos = 0;
+          updateLine();
         }
       } else if (domEvent.key === 'Home') {
         resetCompletion();
@@ -254,8 +252,7 @@ export function Terminal({ onCommand }: TerminalProps) {
             if (suggestions.length === 1) {
               // Single completion - apply it directly
               applyCompletion(suggestions[0], replaceFrom);
-              clearLine();
-              redrawLine();
+              updateLine();
             } else {
               // Multiple completions - enter completion mode
               completionState = {
@@ -275,8 +272,7 @@ export function Terminal({ onCommand }: TerminalProps) {
         // Insert character at cursor position
         currentLine = currentLine.slice(0, cursorPos) + key + currentLine.slice(cursorPos);
         cursorPos++;
-        clearLine();
-        redrawLine();
+        updateLine();
       }
     });
 
