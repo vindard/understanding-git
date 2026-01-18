@@ -15,16 +15,19 @@ import styles from './Terminal.module.css';
 interface TerminalProps {
   onCommand?: (command: string) => Promise<CommandResult>;
   canAdvanceLesson?: boolean;
+  lessonId?: string;
 }
 
-export function Terminal({ onCommand, canAdvanceLesson }: TerminalProps) {
+export function Terminal({ onCommand, canAdvanceLesson, lessonId }: TerminalProps) {
   const terminalRef = useRef<HTMLDivElement>(null);
   const xtermRef = useRef<XTerm | null>(null);
   const onCommandRef = useRef(onCommand);
   const canAdvanceLessonRef = useRef(canAdvanceLesson);
   const prevCanAdvanceLessonRef = useRef(canAdvanceLesson);
+  const prevLessonIdRef = useRef(lessonId);
   const clearHintRef = useRef<(() => void) | null>(null);
   const fetchGhostTextRef = useRef<(() => void) | null>(null);
+  const clearTerminalRef = useRef<(() => void) | null>(null);
 
   // Keep refs updated with latest values
   useEffect(() => {
@@ -50,6 +53,21 @@ export function Terminal({ onCommand, canAdvanceLesson }: TerminalProps) {
       clearHintRef.current();
     }
   }, [canAdvanceLesson]);
+
+  // Clear terminal when switching to a different lesson
+  useEffect(() => {
+    const prevLessonId = prevLessonIdRef.current;
+    prevLessonIdRef.current = lessonId;
+
+    // Only clear if we had a previous lesson and it's different from current
+    if (prevLessonId && lessonId && prevLessonId !== lessonId && clearTerminalRef.current) {
+      clearTerminalRef.current();
+      // Re-fetch ghost text for the new lesson after clearing
+      setTimeout(() => {
+        fetchGhostTextRef.current?.();
+      }, 50);
+    }
+  }, [lessonId]);
 
   const welcomeMessage = "\x1b[2mType 'help' to see available commands, or 'git init' to get started\x1b[0m";
 
@@ -140,6 +158,35 @@ export function Terminal({ onCommand, canAdvanceLesson }: TerminalProps) {
 
     // Store clearHint in ref so it can be called from outside this effect
     clearHintRef.current = clearHint;
+
+    // Clear terminal and reset state (used when switching lessons)
+    const clearTerminal = () => {
+      // Clear any ghost cursor blink
+      if (ghostCursorBlinkInterval) {
+        clearInterval(ghostCursorBlinkInterval);
+        ghostCursorBlinkInterval = null;
+      }
+      // Show native cursor
+      term.write('\x1b[?25h');
+      ghostCursorState = 'on';
+
+      // Reset line state
+      currentLine = '';
+      cursorPos = 0;
+      prevLineLength = 0;
+      ghostText = '';
+      ghostReplaceFrom = 0;
+      hintVisible = false;
+      historyIndex = history.length;
+
+      // Clear screen and redraw
+      term.write('\x1b[2J\x1b[H');
+      term.write(welcomeMessage + '\r\n\r\n');
+      term.write('$ ');
+    };
+
+    // Store clearTerminal in ref so it can be called from outside this effect
+    clearTerminalRef.current = clearTerminal;
 
     // Completion state
     let completionState: {

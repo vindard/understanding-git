@@ -288,6 +288,7 @@ function App() {
                       <Terminal
                         onCommand={handleCommand}
                         canAdvanceLesson={isLessonComplete && lessonIndex < totalLessons - 1}
+                        lessonId={currentLesson?.id}
                       />
                     </div>
                   </div>
