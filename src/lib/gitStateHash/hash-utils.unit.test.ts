@@ -4,7 +4,7 @@ import {
   createStateString,
   shouldUpdateStoredHash,
   checkIntegrity,
-} from './gitStateHash';
+} from './hash-utils';
 
 describe('gitStateHash pure functions', () => {
   describe('djb2Hash', () => {

@@ -3,14 +3,15 @@
  * These test calculations and local logic only - no I/O, no mocks.
  */
 import { describe, it, expect } from 'vitest';
-import { parseCommandLine, extractRedirection } from './index';
 import {
+  parseCommandLine,
+  extractRedirection,
   resolvePath,
   parseHeadTailArgs,
   getFirstNLines,
   getLastNLines,
   parseRmArgs,
-} from './file-commands';
+} from './parsing';
 import { CWD } from '../config';
 
 describe('parseCommandLine', () => {

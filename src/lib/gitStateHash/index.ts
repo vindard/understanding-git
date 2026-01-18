@@ -1,59 +1,29 @@
-import { fs } from './fs';
-import { CWD } from './config';
+/**
+ * Git state hash service.
+ * Manages integrity checking of .git directory to detect external tampering.
+ */
+
+import { fs } from '../fs';
+import { CWD } from '../config';
+import {
+  djb2Hash,
+  createStateString,
+  shouldUpdateStoredHash,
+  checkIntegrity,
+} from './hash-utils';
+
+// Re-export pure functions for convenience
+export {
+  djb2Hash,
+  createStateString,
+  shouldUpdateStoredHash,
+  checkIntegrity,
+} from './hash-utils';
 
 const GIT_DIR = `${CWD}/.git`;
 
 // Module state: the last known valid hash of .git directory
 let lastKnownHash: string | null = null;
-
-// ============================================================================
-// Pure functions (unit testable)
-// ============================================================================
-
-/**
- * Compute a simple hash of a string using djb2 algorithm.
- * Returns hex string representation.
- */
-export function djb2Hash(str: string): string {
-  let hash = 5381;
-  for (let i = 0; i < str.length; i++) {
-    hash = ((hash << 5) + hash) + str.charCodeAt(i);
-    hash = hash >>> 0; // Convert to unsigned 32-bit
-  }
-  return hash.toString(16);
-}
-
-/**
- * Create a deterministic string representation of file contents.
- * Files should be pre-sorted by path for deterministic output.
- */
-export function createStateString(files: [string, string][]): string {
-  return files
-    .map(([path, content]) => `${path}:${content}`)
-    .join('\n');
-}
-
-/**
- * Determine if the stored hash should be updated based on before/after comparison.
- */
-export function shouldUpdateStoredHash(hashBefore: string, hashAfter: string): boolean {
-  return hashBefore !== hashAfter;
-}
-
-/**
- * Check if repo is intact based on stored and current hash.
- * Returns true if no hash stored (pre-init) or hashes match.
- */
-export function checkIntegrity(storedHash: string | null, currentHash: string): boolean {
-  if (storedHash === null) {
-    return true;
-  }
-  return currentHash === storedHash;
-}
-
-// ============================================================================
-// Boundary functions (require fs access)
-// ============================================================================
 
 /**
  * Recursively collect all files in a directory with their contents.
@@ -98,10 +68,6 @@ async function computeGitHash(): Promise<string> {
     return '';
   }
 }
-
-// ============================================================================
-// Public API (manages state + boundary)
-// ============================================================================
 
 /**
  * Update the stored hash after a legitimate git operation.

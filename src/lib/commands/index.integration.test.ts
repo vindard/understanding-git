@@ -1,6 +1,6 @@
 /**
- * Integration tests for shell commands with real filesystem.
- * Tests boundary behavior (actual fs operations).
+ * Integration tests for the commands service.
+ * Tests executeCommand with real filesystem operations.
  */
 
 import { describe, it, expect, beforeEach } from 'vitest';
@@ -8,7 +8,7 @@ import { executeCommand } from './index';
 import * as fsLib from '../fs';
 import { CWD } from '../config';
 
-describe('Shell Commands Integration', () => {
+describe('Commands Service', () => {
   beforeEach(async () => {
     await fsLib.resetFs();
   });
@@ -228,6 +228,69 @@ describe('Shell Commands Integration', () => {
 
       expect(result.success).toBe(true);
       expect(result.output).toContain('\x1b[2J');
+    });
+  });
+
+  describe('git branch command', () => {
+    it('creates a new branch', async () => {
+      await executeCommand('git init');
+      await fsLib.writeFile(`${CWD}/README.md`, '# Test');
+      await executeCommand('git add README.md');
+      await executeCommand('git commit -m "Initial"');
+
+      const result = await executeCommand('git branch feature');
+
+      expect(result.success).toBe(true);
+    });
+
+    it('lists branches', async () => {
+      await executeCommand('git init');
+      await fsLib.writeFile(`${CWD}/README.md`, '# Test');
+      await executeCommand('git add README.md');
+      await executeCommand('git commit -m "Initial"');
+      await executeCommand('git branch feature');
+
+      const result = await executeCommand('git branch');
+
+      expect(result.success).toBe(true);
+      expect(result.output).toContain('master');
+      expect(result.output).toContain('feature');
+    });
+
+    it('highlights current branch', async () => {
+      await executeCommand('git init');
+      await fsLib.writeFile(`${CWD}/README.md`, '# Test');
+      await executeCommand('git add README.md');
+      await executeCommand('git commit -m "Initial"');
+
+      const result = await executeCommand('git branch');
+
+      expect(result.success).toBe(true);
+      expect(result.output).toContain('* master');
+    });
+  });
+
+  describe('git checkout command', () => {
+    it('switches to existing branch', async () => {
+      await executeCommand('git init');
+      await fsLib.writeFile(`${CWD}/README.md`, '# Test');
+      await executeCommand('git add README.md');
+      await executeCommand('git commit -m "Initial"');
+      await executeCommand('git branch feature');
+
+      const result = await executeCommand('git checkout feature');
+
+      expect(result.success).toBe(true);
+      expect(result.output).toContain("Switched to branch 'feature'");
+    });
+
+    it('returns error without branch name', async () => {
+      await executeCommand('git init');
+
+      const result = await executeCommand('git checkout');
+
+      expect(result.success).toBe(false);
+      expect(result.output).toContain('specify a branch');
     });
   });
 

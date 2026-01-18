@@ -9,10 +9,10 @@ import {
   clearGitStateHash,
   repoIntact,
   withHashUpdate,
-} from './gitStateHash';
-import { executeCommand } from './commands';
-import * as fsLib from './fs';
-import { CWD } from './config';
+} from './index';
+import { executeCommand } from '../commands';
+import * as fsLib from '../fs';
+import { CWD } from '../config';
 
 describe('gitStateHash Integration', () => {
   beforeEach(async () => {

@@ -1,11 +1,11 @@
 /**
- * Integration tests for the command registry.
+ * Unit tests for the command registry.
  *
  * These tests verify that:
  * 1. Commands register themselves correctly when modules are imported
  * 2. Query functions return expected results from the populated registry
  *
- * The "boundary" being tested is the module import/registration system.
+ * No I/O operations (fs, git) - just in-memory registry operations.
  */
 
 import { describe, it, expect } from 'vitest';
@@ -22,7 +22,7 @@ import {
   hasCommand,
 } from './registry';
 
-describe('Command Registry Integration', () => {
+describe('Command Registry', () => {
   describe('command registration', () => {
     it('registers file commands', () => {
       const fileCommands = getCommandsByCategory('file');
