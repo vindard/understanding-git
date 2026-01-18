@@ -4,8 +4,8 @@
  */
 
 import { describe, it, expect, beforeEach } from 'vitest';
-import { resetFs, readFile, writeFile, readdir } from './fs';
-import { CWD } from './config';
+import { resetFs, readFile, writeFile, readdir } from '.';
+import { CWD } from '../config';
 
 describe('Filesystem Integration', () => {
   beforeEach(async () => {

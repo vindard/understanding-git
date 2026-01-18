@@ -1,5 +1,5 @@
 import LightningFS from '@isomorphic-git/lightning-fs';
-import { CWD } from './config';
+import { CWD } from '../config';
 
 const DB_NAME = 'git-learning-fs';
 

@@ -21,9 +21,10 @@ Always use Test-Driven Development:
 - No mocks - if you need mocks, it's not a unit test
 - Test calculations, parsing, filtering, transformations
 
-**Integration tests** (`*.integration.test.ts`):
+**Integration tests** (`index.integration.test.ts`):
 - Test code that crosses a single boundary (filesystem, git)
 - Use real implementations (fake-indexeddb for fs, isomorphic-git)
+- **MUST be named `index.integration.test.ts`** - no other naming allowed
 - Located at `<service>/index.integration.test.ts`
 
 **E2E tests** (`*.e2e.test.ts`):
@@ -67,10 +68,15 @@ src/lib/
 │   └── strategies/
 │       └── lesson-completer.ts + lesson-completer.unit.test.ts
 │
+├── fs/
+│   ├── index.ts + index.integration.test.ts    # Filesystem service (no pure functions - thin I/O wrapper)
+│
 └── gitStateHash/
     ├── hash-utils.ts + hash-utils.unit.test.ts # Pure hash functions
     └── index.ts + index.integration.test.ts    # Hash state service
 ```
+
+**Note**: Some services like `fs/` have no pure functions because they are thin wrappers around I/O libraries. This is acceptable - not every service needs pure function extraction.
 
 ### Running Tests
 
@@ -132,3 +138,4 @@ This workflow:
 - **Boundary separation**: Keep I/O at the edges, pure logic in the core
 - **Fast feedback**: Unit tests should run in milliseconds
 - **Real implementations**: Integration tests use actual fs/git, not mocks
+- **Explicit pure functions**: All pure functions must be in dedicated `<module>.ts` files with corresponding `<module>.unit.test.ts` tests. No implicit pure logic hiding in service files. If a service has no pure functions (e.g., thin wrappers around I/O), that's fine - just document it.
