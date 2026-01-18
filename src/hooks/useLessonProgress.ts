@@ -8,6 +8,10 @@ import {
   createStoredProgress,
   type StoredProgress,
 } from '../lib/storage';
+import {
+  getPrerequisiteExerciseIds,
+  findExerciseById,
+} from './lesson-progress-utils';
 
 interface UseLessonProgressReturn {
   currentLesson: Lesson;
@@ -89,20 +93,23 @@ export function useLessonProgress(lessons: Lesson[]): UseLessonProgressReturn {
   }, [currentLesson, currentExerciseIndex, completedExercises]);
 
   const checkStateIntegrity = useCallback(async () => {
-    if (!currentLesson || completedExercises.length === 0) {
+    if (!currentLesson) {
       setIsStateBroken(false);
       return;
     }
 
-    // Check if .git directory has been tampered with
+    // Always check git integrity - even with no completed exercises,
+    // the git state may have been set up via skipToLesson
     if (!await repoIntact()) {
       setIsStateBroken(true);
       return;
     }
 
-    // Check if any completed exercise in current lesson has invalid state
+    // Check if any completed exercise has invalid state
+    // Search across ALL lessons since completedExercises may include
+    // exercises from previous lessons (after skip)
     for (const exerciseId of completedExercises) {
-      const exercise = currentLesson.exercises.find(ex => ex.id === exerciseId);
+      const exercise = findExerciseById(lessons, exerciseId);
       if (exercise) {
         const isValid = await exercise.validate();
         if (!isValid) {
@@ -112,7 +119,7 @@ export function useLessonProgress(lessons: Lesson[]): UseLessonProgressReturn {
       }
     }
     setIsStateBroken(false);
-  }, [currentLesson, completedExercises]);
+  }, [currentLesson, completedExercises, lessons]);
 
   const goToNextLesson = useCallback(() => {
     if (lessonIndex < lessons.length - 1) {
@@ -159,10 +166,13 @@ export function useLessonProgress(lessons: Lesson[]): UseLessonProgressReturn {
     // Update React state
     const idx = lessons.findIndex(l => l.id === lessonId);
     if (idx >= 0) {
+      // Get prerequisite exercise IDs from previous lessons for integrity checking
+      const previousExerciseIds = getPrerequisiteExerciseIds(lessons, idx);
+
       setLessonIndex(idx);
       setProgress({
         lessonId,
-        completedExercises: [],
+        completedExercises: previousExerciseIds,
         currentExerciseIndex: 0,
       });
       setIsStateBroken(false);

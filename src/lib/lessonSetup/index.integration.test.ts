@@ -168,5 +168,56 @@ describe('lessonSetup Integration', () => {
       expect(result.success).toBe(true);
       expect(result.commandsExecuted).toBe(4); // git init, touch, git add, git commit
     });
+
+    it('detects .git deletion after skip even with no exercises completed', async () => {
+      // This test documents the expected behavior:
+      // After skipping to a lesson, the git state hash is set.
+      // If .git is deleted, repoIntact() should return false.
+      // Bug: useLessonProgress.checkStateIntegrity had early return when completedExercises.length === 0
+
+      const result = await skipToLesson('lesson-3');
+      expect(result.success).toBe(true);
+
+      // State is intact immediately after skip
+      expect(await repoIntact()).toBe(true);
+
+      // Simulate deleting .git directory (user tampering via rm -rf .git)
+      // LightningFS doesn't have rm(), so we need to clear contents then rmdir
+      const clearDir = async (path: string): Promise<void> => {
+        const entries = await fs.promises.readdir(path);
+        for (const entry of entries) {
+          const fullPath = `${path}/${entry}`;
+          const stats = await fs.promises.stat(fullPath);
+          if (stats.isDirectory()) {
+            await clearDir(fullPath);
+            await fs.promises.rmdir(fullPath);
+          } else {
+            await fs.promises.unlink(fullPath);
+          }
+        }
+      };
+      await clearDir(`${CWD}/.git`);
+      await fs.promises.rmdir(`${CWD}/.git`);
+
+      // repoIntact() should detect the deletion
+      expect(await repoIntact()).toBe(false);
+    });
+
+    it('previous lesson validators fail after prerequisite file deleted', async () => {
+      // Skip to lesson 4 - requires README.md to exist (from lesson 3)
+      const result = await skipToLesson('lesson-4');
+      expect(result.success).toBe(true);
+
+      // Lesson 2's exercise 2-1 validates that README.md exists
+      const lesson2 = lessons.find(l => l.id === 'lesson-2');
+      const exercise2_1 = lesson2?.exercises.find(e => e.id === '2-1');
+      expect(await exercise2_1?.validate()).toBe(true);
+
+      // Delete README.md (simulating user tampering)
+      await fs.promises.unlink(`${CWD}/README.md`);
+
+      // Lesson 2's exercise 2-1 should now fail (file doesn't exist)
+      expect(await exercise2_1?.validate()).toBe(false);
+    });
   });
 });
