@@ -68,6 +68,17 @@ describe('LessonCompleter', () => {
       expect(completer.canHandle(context)).toBe(false);
     });
 
+    it('returns false when git subcommand does not match hint', () => {
+      // Hint is "git checkout feature" but user is typing "git commit"
+      completer.setExercise(createExercise('Type: git checkout feature'));
+      const context = createContext({
+        cmd: 'git',
+        parts: ['git', 'commit', ''],
+        endsWithSpace: true,
+      });
+      expect(completer.canHandle(context)).toBe(false);
+    });
+
     it('returns true when typing partial command that matches hint', () => {
       completer.setExercise(createExercise('Type: touch README.md'));
       const context = createContext({ cmd: 't', parts: ['t'], endsWithSpace: false });
@@ -182,6 +193,22 @@ describe('LessonCompleter', () => {
         cursorPos: 9,
         cmd: 'git',
         parts: ['git', 'init', ''],
+        endsWithSpace: true,
+      });
+
+      const result = await completer.complete(context);
+      expect(result.suggestions).toEqual([]);
+    });
+
+    it('returns empty when git subcommand does not match hint', async () => {
+      // Hint is "git checkout feature" but user typed "git commit "
+      completer.setExercise(createExercise('Type: git checkout feature'));
+      const context = createContext({
+        line: 'git commit ',
+        lineUpToCursor: 'git commit ',
+        cursorPos: 11,
+        cmd: 'git',
+        parts: ['git', 'commit', ''],
         endsWithSpace: true,
       });
 

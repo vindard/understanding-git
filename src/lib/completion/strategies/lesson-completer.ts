@@ -27,7 +27,21 @@ export class LessonCompleter implements CompletionStrategy {
 
     // Handle argument completion (command matches, ready for args)
     const readyForArg = context.parts.length > 1 || (context.parts.length === 1 && context.endsWithSpace);
-    return context.cmd === hintParts.cmd && readyForArg;
+    if (!readyForArg || context.cmd !== hintParts.cmd) {
+      return false;
+    }
+
+    // For git commands, also verify the subcommand matches
+    if (context.cmd === 'git' && hintParts.args.length > 0) {
+      const userSubcmd = context.parts[1] || '';
+      const hintSubcmd = hintParts.args[0];
+      // If user has typed a complete subcommand that doesn't match, reject
+      if (userSubcmd && !hintSubcmd.startsWith(userSubcmd)) {
+        return false;
+      }
+    }
+
+    return true;
   }
 
   async complete(context: CompletionContext): Promise<CompletionResult> {
@@ -45,6 +59,16 @@ export class LessonCompleter implements CompletionStrategy {
           replaceFrom: 0,
           replaceTo: context.cursorPos,
         };
+      }
+    }
+
+    // For git commands, verify the subcommand matches before suggesting args
+    if (context.cmd === 'git' && hintParts.args.length > 0) {
+      const userSubcmd = context.parts[1] || '';
+      const hintSubcmd = hintParts.args[0];
+      // If user has typed a subcommand that doesn't match hint, return empty
+      if (userSubcmd && !hintSubcmd.startsWith(userSubcmd)) {
+        return { suggestions: [], replaceFrom: context.cursorPos, replaceTo: context.cursorPos };
       }
     }
 
