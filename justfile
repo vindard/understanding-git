@@ -26,9 +26,17 @@ preview:
 typecheck:
     pnpm tsc --noEmit
 
-# Run tests once
+# Run all tests once
 test:
     pnpm test:run
+
+# Run unit tests only (fast, ~100ms)
+test-unit:
+    pnpm test:unit
+
+# Run integration tests only (slower, ~12s)
+test-integration:
+    pnpm test:integration
 
 # Run tests in watch mode
 test-watch:

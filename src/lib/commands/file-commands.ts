@@ -3,12 +3,66 @@ import { CWD } from '../config';
 import { registerCommand } from './registry';
 import type { CommandResult } from './types';
 
+// ============================================================================
+// Pure functions (unit testable)
+// ============================================================================
+
 export function resolvePath(path: string): string {
   if (path.startsWith('/')) {
     return path;
   }
   return `${CWD}/${path}`;
 }
+
+/**
+ * Parse head/tail command arguments.
+ * Returns the number of lines and file path.
+ */
+export function parseHeadTailArgs(args: string[]): { numLines: number; filePath: string | undefined } {
+  let numLines = 10;
+  let filePath: string | undefined;
+
+  for (let i = 0; i < args.length; i++) {
+    if (args[i] === '-n' && args[i + 1]) {
+      numLines = parseInt(args[i + 1], 10);
+      i++; // Skip the next argument
+    } else if (!args[i].startsWith('-')) {
+      filePath = args[i];
+    }
+  }
+
+  return { numLines, filePath };
+}
+
+/**
+ * Get the first N lines from content.
+ */
+export function getFirstNLines(content: string, n: number): string {
+  const lines = content.split('\n');
+  return lines.slice(0, n).join('\n');
+}
+
+/**
+ * Get the last N lines from content.
+ */
+export function getLastNLines(content: string, n: number): string {
+  const lines = content.split('\n');
+  return lines.slice(-n).join('\n');
+}
+
+/**
+ * Parse rm command arguments.
+ * Returns whether recursive flag is set and the target paths.
+ */
+export function parseRmArgs(args: string[]): { recursive: boolean; targets: string[] } {
+  const recursive = args[0] === '-r' || args[0] === '-rf';
+  const targets = recursive ? args.slice(1) : args;
+  return { recursive, targets };
+}
+
+// ============================================================================
+// Command handlers (boundary - use fs)
+// ============================================================================
 
 async function handleLsCommand(args: string[]): Promise<CommandResult> {
   const path = args[0] ? resolvePath(args[0]) : CWD;
@@ -26,18 +80,7 @@ async function handleCatCommand(args: string[]): Promise<CommandResult> {
 }
 
 async function handleTailCommand(args: string[]): Promise<CommandResult> {
-  let numLines = 10;
-  let filePath: string | undefined;
-
-  // Parse arguments
-  for (let i = 0; i < args.length; i++) {
-    if (args[i] === '-n' && args[i + 1]) {
-      numLines = parseInt(args[i + 1], 10);
-      i++; // Skip the next argument
-    } else if (!args[i].startsWith('-')) {
-      filePath = args[i];
-    }
-  }
+  const { numLines, filePath } = parseHeadTailArgs(args);
 
   if (!filePath) {
     return { output: 'tail: missing file operand', success: false };
@@ -46,27 +89,14 @@ async function handleTailCommand(args: string[]): Promise<CommandResult> {
   const path = resolvePath(filePath);
   try {
     const content = await fsLib.readFile(path);
-    const lines = content.split('\n');
-    const tailLines = lines.slice(-numLines);
-    return { output: tailLines.join('\n'), success: true };
+    return { output: getLastNLines(content, numLines), success: true };
   } catch {
     return { output: `tail: cannot open '${filePath}': No such file or directory`, success: false };
   }
 }
 
 async function handleHeadCommand(args: string[]): Promise<CommandResult> {
-  let numLines = 10;
-  let filePath: string | undefined;
-
-  // Parse arguments
-  for (let i = 0; i < args.length; i++) {
-    if (args[i] === '-n' && args[i + 1]) {
-      numLines = parseInt(args[i + 1], 10);
-      i++; // Skip the next argument
-    } else if (!args[i].startsWith('-')) {
-      filePath = args[i];
-    }
-  }
+  const { numLines, filePath } = parseHeadTailArgs(args);
 
   if (!filePath) {
     return { output: 'head: missing file operand', success: false };
@@ -75,9 +105,7 @@ async function handleHeadCommand(args: string[]): Promise<CommandResult> {
   const path = resolvePath(filePath);
   try {
     const content = await fsLib.readFile(path);
-    const lines = content.split('\n');
-    const headLines = lines.slice(0, numLines);
-    return { output: headLines.join('\n'), success: true };
+    return { output: getFirstNLines(content, numLines), success: true };
   } catch {
     return { output: `head: cannot open '${filePath}': No such file or directory`, success: false };
   }
@@ -108,8 +136,7 @@ async function handleTouchCommand(args: string[]): Promise<CommandResult> {
 }
 
 async function handleRmCommand(args: string[]): Promise<CommandResult> {
-  const recursive = args[0] === '-r' || args[0] === '-rf';
-  const targets = recursive ? args.slice(1) : args;
+  const { recursive, targets } = parseRmArgs(args);
 
   if (targets.length === 0) {
     return { output: 'rm: missing operand', success: false };

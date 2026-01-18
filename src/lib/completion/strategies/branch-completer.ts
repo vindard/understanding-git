@@ -1,26 +1,32 @@
 import * as gitLib from '../../git';
 import type { CompletionContext, CompletionResult, CompletionStrategy } from '../types';
-
-const GIT_BRANCH_SUBCOMMANDS = ['checkout'];
+import {
+  filterByPrefix,
+  calculateReplaceFrom,
+  shouldCompleteBranch,
+} from '../filters';
 
 export class BranchCompleter implements CompletionStrategy {
   canHandle(context: CompletionContext): boolean {
-    // Handle "git checkout <branch>"
-    if (context.cmd === 'git' && context.parts.length >= 2) {
-      const gitSubcmd = context.parts[1];
-      return GIT_BRANCH_SUBCOMMANDS.includes(gitSubcmd);
-    }
-    return false;
+    return shouldCompleteBranch(context.cmd, context.parts);
   }
 
   async complete(context: CompletionContext): Promise<CompletionResult> {
     const partial = context.parts[context.parts.length - 1] || '';
     const branchToComplete = context.endsWithSpace ? '' : partial;
 
-    const suggestions = await this.completeBranch(branchToComplete);
-    const replaceFrom = context.endsWithSpace
-      ? context.cursorPos
-      : context.lineUpToCursor.lastIndexOf(partial);
+    // Fetch from git
+    const branches = await this.fetchBranches();
+
+    // Apply pure filtering
+    const suggestions = filterByPrefix(branches, branchToComplete);
+
+    const replaceFrom = calculateReplaceFrom(
+      context.endsWithSpace,
+      context.cursorPos,
+      context.lineUpToCursor,
+      partial
+    );
 
     return {
       suggestions,
@@ -29,10 +35,13 @@ export class BranchCompleter implements CompletionStrategy {
     };
   }
 
-  private async completeBranch(partial: string): Promise<string[]> {
+  /**
+   * Fetch branches from git.
+   * This is the only method that crosses the git boundary.
+   */
+  private async fetchBranches(): Promise<string[]> {
     try {
-      const branches = await gitLib.gitListBranches();
-      return branches.filter(branch => branch.startsWith(partial));
+      return await gitLib.gitListBranches();
     } catch {
       return [];
     }

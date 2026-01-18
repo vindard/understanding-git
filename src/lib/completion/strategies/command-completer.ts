@@ -1,17 +1,21 @@
 import { getCommandNames } from '../../commands/registry';
 import type { CompletionContext, CompletionResult, CompletionStrategy } from '../types';
+import { filterByPrefix, shouldCompleteCommand } from '../filters';
 
 export class CommandCompleter implements CompletionStrategy {
   canHandle(context: CompletionContext): boolean {
-    // Handle empty line or completing first word (before space)
-    return context.parts.length === 0 ||
-           (context.parts.length === 1 && !context.endsWithSpace);
+    return shouldCompleteCommand(context.parts, context.endsWithSpace);
   }
 
   async complete(context: CompletionContext): Promise<CompletionResult> {
     const partial = context.parts[0] || '';
+
+    // Fetch available commands (from registry, not external service)
     const commands = getCommandNames();
-    const suggestions = commands.filter(cmd => cmd.startsWith(partial));
+
+    // Apply pure filtering
+    const suggestions = filterByPrefix(commands, partial);
+
     return {
       suggestions,
       replaceFrom: 0,
