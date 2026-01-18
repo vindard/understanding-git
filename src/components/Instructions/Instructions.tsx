@@ -13,6 +13,8 @@ interface InstructionsProps {
   hasPrevious?: boolean;
   lessonNumber: number;
   totalLessons: number;
+  allLessons?: Lesson[];
+  onSelectLesson?: (lessonId: string) => void;
 }
 
 export function Instructions({
@@ -27,6 +29,8 @@ export function Instructions({
   hasPrevious = false,
   lessonNumber,
   totalLessons,
+  allLessons,
+  onSelectLesson,
 }: InstructionsProps) {
   if (!lesson) {
     return (
@@ -39,9 +43,23 @@ export function Instructions({
   return (
     <div className={styles.container}>
       <div className={styles.lessonHeader}>
-        <span className={styles.lessonNumber}>
-          Lesson {lessonNumber} of {totalLessons}
-        </span>
+        {allLessons && onSelectLesson ? (
+          <select
+            className={styles.lessonSelect}
+            value={lesson.id}
+            onChange={(e) => onSelectLesson(e.target.value)}
+          >
+            {allLessons.map((l, idx) => (
+              <option key={l.id} value={l.id}>
+                {idx + 1}. {l.title}
+              </option>
+            ))}
+          </select>
+        ) : (
+          <span className={styles.lessonNumber}>
+            Lesson {lessonNumber} of {totalLessons}
+          </span>
+        )}
         <h2 className={styles.title}>{lesson.title}</h2>
         <p className={styles.description}>{lesson.description}</p>
       </div>

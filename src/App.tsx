@@ -48,6 +48,7 @@ function App() {
     goToNextLesson,
     goToPreviousLesson,
     resetProgress,
+    skipToLesson,
     lessonIndex,
     totalLessons,
   } = useLessonProgress(lessons);
@@ -94,6 +95,14 @@ function App() {
       await refreshFileTree();
       await checkCurrentExercise('');
       await checkStateIntegrity();
+    }
+  };
+
+  const handleSelectLesson = async (lessonId: string) => {
+    const success = await skipToLesson(lessonId);
+    if (success) {
+      await refreshFileTree();
+      clearSelection();
     }
   };
 
@@ -277,6 +286,8 @@ function App() {
                   hasPrevious={lessonIndex > 0}
                   lessonNumber={lessonIndex + 1}
                   totalLessons={totalLessons}
+                  allLessons={lessons}
+                  onSelectLesson={handleSelectLesson}
                 />
               </div>
             </div>

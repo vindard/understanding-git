@@ -1,6 +1,7 @@
 import { useState, useCallback } from 'react';
 import type { Lesson, LessonProgress } from '../types/lesson';
 import { repoIntact } from '../lib/gitStateHash';
+import { skipToLesson as lessonSetupSkipToLesson } from '../lib/lessonSetup';
 
 interface UseLessonProgressReturn {
   currentLesson: Lesson;
@@ -14,6 +15,7 @@ interface UseLessonProgressReturn {
   goToNextLesson: () => void;
   goToPreviousLesson: () => void;
   resetProgress: () => void;
+  skipToLesson: (lessonId: string) => Promise<boolean>;
   lessonIndex: number;
   totalLessons: number;
 }
@@ -136,6 +138,28 @@ export function useLessonProgress(lessons: Lesson[]): UseLessonProgressReturn {
     setIsStateBroken(false);
   }, [lessons]);
 
+  const skipToLesson = useCallback(async (lessonId: string): Promise<boolean> => {
+    // Setup filesystem for target lesson
+    const result = await lessonSetupSkipToLesson(lessonId);
+    if (!result.success) {
+      return false;
+    }
+
+    // Update React state
+    const idx = lessons.findIndex(l => l.id === lessonId);
+    if (idx >= 0) {
+      setLessonIndex(idx);
+      setProgress({
+        lessonId,
+        completedExercises: [],
+        currentExerciseIndex: 0,
+      });
+      setIsStateBroken(false);
+    }
+
+    return true;
+  }, [lessons]);
+
   return {
     currentLesson,
     currentExerciseIndex,
@@ -148,6 +172,7 @@ export function useLessonProgress(lessons: Lesson[]): UseLessonProgressReturn {
     goToNextLesson,
     goToPreviousLesson,
     resetProgress,
+    skipToLesson,
     lessonIndex,
     totalLessons: lessons.length,
   };
