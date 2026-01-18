@@ -2,6 +2,12 @@
 default:
     @just --list
 
+# Setup project (install deps + git hooks)
+setup:
+    pnpm install
+    git config core.hooksPath .githooks
+    @echo "Setup complete! Git hooks installed."
+
 # Start development server
 dev:
     pnpm dev
@@ -46,8 +52,15 @@ test-e2e:
 test-watch:
     pnpm test
 
+# Verify lockfile is in sync with package.json
+check-lockfile:
+    @pnpm install --frozen-lockfile --ignore-scripts >/dev/null 2>&1 || (echo "Error: pnpm-lock.yaml out of sync. Run 'pnpm install'" && exit 1)
+    @echo "Lockfile OK"
+
 # Run all checks (typecheck, lint, test, build)
 check:
+    @echo "Checking lockfile..."
+    @just check-lockfile
     @echo "Running typecheck..."
     @just typecheck
     @echo "Running linter..."

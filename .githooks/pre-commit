@@ -1,0 +1,28 @@
+#!/bin/sh
+# Pre-commit hook: ensure pnpm-lock.yaml is in sync with package.json
+
+# Check if package.json is being committed
+if git diff --cached --name-only | grep -q "^package.json$"; then
+    # If package.json changed, lockfile should also be staged
+    if ! git diff --cached --name-only | grep -q "^pnpm-lock.yaml$"; then
+        echo "Error: package.json was modified but pnpm-lock.yaml was not staged."
+        echo ""
+        echo "Run 'pnpm install' and stage the lockfile:"
+        echo "  pnpm install"
+        echo "  git add pnpm-lock.yaml"
+        echo ""
+        exit 1
+    fi
+fi
+
+# Verify lockfile is in sync (catches manual package.json edits)
+pnpm install --frozen-lockfile --ignore-scripts >/dev/null 2>&1
+if [ $? -ne 0 ]; then
+    echo "Error: pnpm-lock.yaml is out of sync with package.json."
+    echo ""
+    echo "Run 'pnpm install' to update the lockfile:"
+    echo "  pnpm install"
+    echo "  git add pnpm-lock.yaml"
+    echo ""
+    exit 1
+fi
