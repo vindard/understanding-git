@@ -8,19 +8,28 @@ Always use Test-Driven Development:
 2. Implement the minimum code to make it pass
 3. Refactor if needed
 
-### Unit vs Integration Tests
+### Three-Tier Test Structure
+
+| Type | Suffix | Purpose | Speed |
+|------|--------|---------|-------|
+| **Unit** | `*.unit.test.ts` | Pure functions | ~500ms |
+| **Integration** | `*.integration.test.ts` | Single service boundary | ~30s |
+| **E2E** | `*.e2e.test.ts` | Multiple services together | ~15s |
 
 **Unit tests** (`*.unit.test.ts`):
 - Test pure functions only (no I/O, no side effects)
 - No mocks - if you need mocks, it's not a unit test
-- Fast (~500ms for all unit tests)
 - Test calculations, parsing, filtering, transformations
 
 **Integration tests** (`*.integration.test.ts`):
-- Test code that crosses boundaries (filesystem, git, network)
+- Test code that crosses a single boundary (filesystem, git)
 - Use real implementations (fake-indexeddb for fs, isomorphic-git)
-- Slower (~30-50s for all integration tests)
-- Test service orchestration and boundary behavior
+- Located at `<service>/index.integration.test.ts`
+
+**E2E tests** (`*.e2e.test.ts`):
+- Test multiple services working together
+- Verify user-facing flows (e.g., lesson progression)
+- Example: `lesson-flow.e2e.test.ts` tests commands + validators + fs + git
 
 ### File Structure Pattern
 
@@ -67,16 +76,19 @@ src/lib/
 
 ```bash
 # Run all tests
-npm test
+just test
 
-# Run only unit tests (fast)
-npm test -- --run unit
+# Run only unit tests (fast, ~500ms)
+just test-unit
 
-# Run only integration tests
-npm test -- --run integration
+# Run only integration tests (~30s)
+just test-integration
+
+# Run only e2e tests (~15s)
+just test-e2e
 
 # Run specific test file
-npm test -- --run src/lib/commands/parsing.unit.test.ts
+pnpm test -- --run src/lib/commands/parsing.unit.test.ts
 ```
 
 ### When Adding New Features
@@ -89,6 +101,9 @@ npm test -- --run src/lib/commands/parsing.unit.test.ts
 3. For boundary/service code:
    - Add to or create `index.ts` in a service folder
    - Write failing test in `index.integration.test.ts`
+   - Implement until test passes
+4. For user-facing flows (e.g., new lessons):
+   - Write failing test in `lesson-flow.e2e.test.ts`
    - Implement until test passes
 
 ### Key Principles

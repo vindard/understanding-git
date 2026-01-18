@@ -30,13 +30,17 @@ typecheck:
 test:
     pnpm test:run
 
-# Run unit tests only (fast, ~100ms)
+# Run unit tests only (fast, ~500ms)
 test-unit:
     pnpm test:unit
 
-# Run integration tests only (slower, ~12s)
+# Run integration tests only (~30s)
 test-integration:
     pnpm test:integration
+
+# Run e2e tests only (lesson flows, ~15s)
+test-e2e:
+    pnpm test:e2e
 
 # Run tests in watch mode
 test-watch:

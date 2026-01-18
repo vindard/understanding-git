@@ -1,8 +1,10 @@
 /**
- * Integration tests for lesson flows.
+ * E2E tests for lesson flows.
  *
- * These tests use REAL implementations (no mocking) to catch actual bugs
- * like "lesson 4 leaves unexpected state for lesson 5".
+ * These tests verify multiple services working together:
+ * commands + validators + fs + git
+ *
+ * They catch bugs like "lesson 4 leaves unexpected state for lesson 5".
  *
  * Each test:
  * 1. Resets the filesystem to a clean state

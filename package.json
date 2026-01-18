@@ -11,7 +11,8 @@
     "test": "vitest",
     "test:run": "vitest run",
     "test:unit": "vitest run unit",
-    "test:integration": "vitest run integration"
+    "test:integration": "vitest run integration",
+    "test:e2e": "vitest run e2e"
   },
   "dependencies": {
     "@isomorphic-git/lightning-fs": "^4.6.2",
