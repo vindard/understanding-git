@@ -22,7 +22,9 @@ export function Terminal({ onCommand, canAdvanceLesson }: TerminalProps) {
   const xtermRef = useRef<XTerm | null>(null);
   const onCommandRef = useRef(onCommand);
   const canAdvanceLessonRef = useRef(canAdvanceLesson);
+  const prevCanAdvanceLessonRef = useRef(canAdvanceLesson);
   const clearHintRef = useRef<(() => void) | null>(null);
+  const fetchGhostTextRef = useRef<(() => void) | null>(null);
 
   // Keep refs updated with latest values
   useEffect(() => {
@@ -30,7 +32,19 @@ export function Terminal({ onCommand, canAdvanceLesson }: TerminalProps) {
   }, [onCommand]);
 
   useEffect(() => {
+    const prevValue = prevCanAdvanceLessonRef.current;
     canAdvanceLessonRef.current = canAdvanceLesson;
+    prevCanAdvanceLessonRef.current = canAdvanceLesson;
+
+    // When transitioning from "can advance" to "cannot advance", we moved to a new exercise
+    // Re-fetch ghost text to show the new hint
+    if (prevValue && !canAdvanceLesson && fetchGhostTextRef.current) {
+      // Small delay to ensure LessonCompleter has been updated with new exercise
+      setTimeout(() => {
+        fetchGhostTextRef.current?.();
+      }, 50);
+    }
+
     // Clear hint when we can no longer advance (e.g., moved to next lesson)
     if (!canAdvanceLesson && clearHintRef.current) {
       clearHintRef.current();
@@ -95,6 +109,11 @@ export function Terminal({ onCommand, canAdvanceLesson }: TerminalProps) {
     let ghostText = '';
     let ghostReplaceFrom = 0;
 
+    // Ghost cursor blink state (custom cursor when ghost text is at cursor position)
+    let ghostCursorState: 'on' | 'off' = 'on';
+    let ghostCursorBlinkInterval: ReturnType<typeof setInterval> | null = null;
+    const CURSOR_BLINK_MS = 530; // Match typical terminal cursor blink rate
+
     // Shortcut hint for advancing to next lesson
     const shortcutHint = getShortcutHint(isMacPlatform());
 
@@ -148,15 +167,58 @@ export function Terminal({ onCommand, canAdvanceLesson }: TerminalProps) {
       completionState = null;
     };
 
+    // Check if ghost cursor should be active (ghost text present and cursor at end)
+    const shouldUseGhostCursor = () => ghostText && cursorPos === currentLine.length;
+
     const updateLine = () => {
-      const { output, newPrevLength } = buildLineOutput(currentLine, cursorPos, prevLineLength, ghostText);
+      const useGhostCursor = shouldUseGhostCursor();
+      const { output, newPrevLength } = buildLineOutput(
+        currentLine,
+        cursorPos,
+        prevLineLength,
+        ghostText,
+        useGhostCursor ? ghostCursorState : undefined
+      );
       term.write(output);
       prevLineLength = newPrevLength;
+    };
+
+    const startGhostCursorBlink = () => {
+      if (ghostCursorBlinkInterval) return; // Already running
+
+      // Hide native cursor
+      term.write('\x1b[?25l');
+      ghostCursorState = 'on';
+      updateLine();
+
+      ghostCursorBlinkInterval = setInterval(() => {
+        ghostCursorState = ghostCursorState === 'on' ? 'off' : 'on';
+        updateLine();
+      }, CURSOR_BLINK_MS);
+    };
+
+    const stopGhostCursorBlink = () => {
+      if (ghostCursorBlinkInterval) {
+        clearInterval(ghostCursorBlinkInterval);
+        ghostCursorBlinkInterval = null;
+      }
+      // Show native cursor
+      term.write('\x1b[?25h');
+      ghostCursorState = 'on';
+    };
+
+    const updateGhostCursorBlink = () => {
+      if (shouldUseGhostCursor()) {
+        startGhostCursorBlink();
+      } else {
+        stopGhostCursorBlink();
+      }
     };
 
     const clearGhostText = () => {
       ghostText = '';
       ghostReplaceFrom = 0;
+      stopGhostCursorBlink();
     };
 
     const fetchGhostText = () => {
@@ -185,6 +247,7 @@ export function Terminal({ onCommand, canAdvanceLesson }: TerminalProps) {
           ghostText = newGhost;
           ghostReplaceFrom = replaceFrom;
           updateLine();
+          updateGhostCursorBlink();
         } else {
           if (ghostText) {
             clearGhostText();
@@ -196,11 +259,16 @@ export function Terminal({ onCommand, canAdvanceLesson }: TerminalProps) {
       });
     };
 
+    // Store fetchGhostText in ref so it can be called from outside this effect
+    fetchGhostTextRef.current = fetchGhostText;
+
     const acceptGhostText = (): boolean => {
       if (ghostText) {
+        stopGhostCursorBlink();
         currentLine = currentLine.slice(0, cursorPos) + ghostText + currentLine.slice(cursorPos);
         cursorPos += ghostText.length;
-        clearGhostText();
+        ghostText = '';
+        ghostReplaceFrom = 0;
         updateLine();
         return true;
       }
@@ -558,6 +626,9 @@ export function Terminal({ onCommand, canAdvanceLesson }: TerminalProps) {
     resizeObserver.observe(terminalRef.current);
 
     return () => {
+      if (ghostCursorBlinkInterval) {
+        clearInterval(ghostCursorBlinkInterval);
+      }
       resizeObserver.disconnect();
       term.dispose();
       xtermRef.current = null;

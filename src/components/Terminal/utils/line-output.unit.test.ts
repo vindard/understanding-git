@@ -82,5 +82,51 @@ describe('buildLineOutput', () => {
       const result = buildLineOutput('test', 2, 0, 'ing');
       expect(result.output).toContain('\x1b[5D');
     });
+
+    describe('ghost cursor states', () => {
+      it('renders first char with reverse video when ghostCursorState is on', () => {
+        // Cursor at end of line, ghost text "init"
+        const result = buildLineOutput('git ', 4, 0, 'init', 'on');
+        // First char "i" in reverse video, rest "nit" in dim
+        expect(result.output).toContain('\x1b[7mi\x1b[27m'); // reverse video
+        expect(result.output).toContain('\x1b[2mnit\x1b[0m'); // rest dim
+      });
+
+      it('renders first char in dim when ghostCursorState is off', () => {
+        const result = buildLineOutput('git ', 4, 0, 'init', 'off');
+        // First char "i" in dim, rest "nit" also dim
+        expect(result.output).toContain('\x1b[2mi\x1b[22m'); // dim then normal intensity
+        expect(result.output).toContain('\x1b[2mnit\x1b[0m'); // rest dim
+      });
+
+      it('uses standard rendering when cursor not at end of line', () => {
+        // Cursor at position 2 (mid-line), ghost cursor state ignored
+        const result = buildLineOutput('git ', 2, 0, 'init', 'on');
+        // Should use standard dim rendering, not reverse video
+        expect(result.output).not.toContain('\x1b[7m');
+        expect(result.output).toContain('\x1b[2minit\x1b[0m');
+      });
+
+      it('uses standard rendering when ghostCursorState is undefined', () => {
+        const result = buildLineOutput('git ', 4, 0, 'init', undefined);
+        // Standard dim rendering
+        expect(result.output).toContain('\x1b[2minit\x1b[0m');
+        expect(result.output).not.toContain('\x1b[7m');
+      });
+
+      it('handles single character ghost text with cursor on', () => {
+        const result = buildLineOutput('gi', 2, 0, 't', 'on');
+        // Only one char, so just reverse video + reset
+        expect(result.output).toContain('\x1b[7mt\x1b[27m');
+        expect(result.output).toContain('\x1b[0m');
+      });
+
+      it('handles single character ghost text with cursor off', () => {
+        const result = buildLineOutput('gi', 2, 0, 't', 'off');
+        // Only one char in dim
+        expect(result.output).toContain('\x1b[2mt\x1b[22m');
+        expect(result.output).toContain('\x1b[0m');
+      });
+    });
   });
 });
