@@ -26,6 +26,186 @@ describe('Lesson Flow Integration Tests (Real Implementations)', () => {
     await resetFs();
   });
 
+  describe('Lesson 1: Your First Repository', () => {
+    it('step 1-1: git init creates repository and validator passes', async () => {
+      await gitInit();
+
+      const exercise = getExercise('lesson-1', '1-1');
+      const valid = await exercise?.validate();
+      expect(valid).toBe(true);
+    });
+
+    it('step 1-2: git status works after init and validator passes', async () => {
+      await gitInit();
+
+      const result = await executeCommand('git status');
+      expect(result.success).toBe(true);
+
+      const exercise = getExercise('lesson-1', '1-2');
+      const valid = await exercise?.validate();
+      expect(valid).toBe(true);
+    });
+
+    it('step 1-1 fails without git init', async () => {
+      // Don't run git init
+      const exercise = getExercise('lesson-1', '1-1');
+      const valid = await exercise?.validate();
+      expect(valid).toBe(false);
+    });
+  });
+
+  describe('Lesson 2: Tracking Files', () => {
+    beforeEach(async () => {
+      // Lesson 2 assumes lesson 1 completed: repo initialized
+      await gitInit();
+    });
+
+    it('step 2-1: touch creates file and validator passes', async () => {
+      const result = await executeCommand('touch README.md');
+      expect(result.success).toBe(true);
+
+      const exercise = getExercise('lesson-2', '2-1');
+      const valid = await exercise?.validate();
+      expect(valid).toBe(true);
+    });
+
+    it('step 2-2: git status shows untracked file', async () => {
+      await executeCommand('touch README.md');
+
+      const result = await executeCommand('git status');
+      expect(result.success).toBe(true);
+      expect(result.output).toContain('README.md');
+
+      const exercise = getExercise('lesson-2', '2-2');
+      const valid = await exercise?.validate();
+      expect(valid).toBe(true);
+    });
+
+    it('step 2-3: git add stages file and validator passes', async () => {
+      await executeCommand('touch README.md');
+
+      const result = await executeCommand('git add README.md');
+      expect(result.success).toBe(true);
+
+      const exercise = getExercise('lesson-2', '2-3');
+      const valid = await exercise?.validate();
+      expect(valid).toBe(true);
+    });
+
+    it('step 2-4: git status shows staged file', async () => {
+      await executeCommand('touch README.md');
+      await executeCommand('git add README.md');
+
+      const result = await executeCommand('git status');
+      expect(result.success).toBe(true);
+
+      const exercise = getExercise('lesson-2', '2-4');
+      const valid = await exercise?.validate();
+      expect(valid).toBe(true);
+    });
+
+    it('step 2-3 fails without file created', async () => {
+      // Don't create file, try to stage it
+      const exercise = getExercise('lesson-2', '2-3');
+      const valid = await exercise?.validate();
+      expect(valid).toBe(false);
+    });
+  });
+
+  describe('Lesson 3: Making Commits', () => {
+    beforeEach(async () => {
+      // Lesson 3 assumes lessons 1-2 completed: repo with staged file
+      await gitInit();
+      await executeCommand('touch README.md');
+      await executeCommand('git add README.md');
+    });
+
+    it('step 3-1: git commit creates commit and validator passes', async () => {
+      const result = await executeCommand('git commit -m "Add README"');
+      expect(result.success).toBe(true);
+
+      const exercise = getExercise('lesson-3', '3-1');
+      const valid = await exercise?.validate();
+      expect(valid).toBe(true);
+    });
+
+    it('step 3-2: git log shows commit history', async () => {
+      await executeCommand('git commit -m "Add README"');
+
+      const result = await executeCommand('git log');
+      expect(result.success).toBe(true);
+      expect(result.output).toContain('Add README');
+
+      const exercise = getExercise('lesson-3', '3-2');
+      const valid = await exercise?.validate();
+      expect(valid).toBe(true);
+    });
+
+    it('step 3-1 fails without any commits', async () => {
+      // Don't commit
+      const exercise = getExercise('lesson-3', '3-1');
+      const valid = await exercise?.validate();
+      expect(valid).toBe(false);
+    });
+  });
+
+  describe('Lesson 1 → 2 Transition', () => {
+    it('repo from lesson 1 enables lesson 2 to work', async () => {
+      // Complete lesson 1
+      await gitInit();
+      expect(await getExercise('lesson-1', '1-1')?.validate()).toBe(true);
+
+      // Now lesson 2-1 should work
+      const result = await executeCommand('touch README.md');
+      expect(result.success).toBe(true);
+      expect(await getExercise('lesson-2', '2-1')?.validate()).toBe(true);
+    });
+  });
+
+  describe('Lesson 2 → 3 Transition', () => {
+    it('staged file from lesson 2 enables lesson 3 commit', async () => {
+      // Complete lessons 1-2
+      await gitInit();
+      await executeCommand('touch README.md');
+      await executeCommand('git add README.md');
+      expect(await getExercise('lesson-2', '2-3')?.validate()).toBe(true);
+
+      // Now lesson 3-1 should work
+      const result = await executeCommand('git commit -m "Add README"');
+      expect(result.success).toBe(true);
+      expect(await getExercise('lesson-3', '3-1')?.validate()).toBe(true);
+    });
+
+    it('lesson 2 incomplete: file created but not staged breaks lesson 3 flow', async () => {
+      await gitInit();
+      await executeCommand('touch README.md');
+      // Don't stage the file - lesson 2-3 not completed
+
+      // Lesson 2-3 validator should fail (file not staged)
+      const ex23 = getExercise('lesson-2', '2-3');
+      expect(await ex23?.validate()).toBe(false);
+    });
+  });
+
+  describe('Lesson 3 → 4 Transition', () => {
+    it('commit from lesson 3 enables lesson 4 to create second commit', async () => {
+      // Complete lessons 1-3
+      await gitInit();
+      await executeCommand('touch README.md');
+      await executeCommand('git add README.md');
+      await executeCommand('git commit -m "Add README"');
+      expect(await getExercise('lesson-3', '3-1')?.validate()).toBe(true);
+
+      // Now lesson 4 should work
+      await executeCommand('echo "# My Project" > README.md');
+      expect(await getExercise('lesson-4', '4-1')?.validate()).toBe(true);
+
+      await executeCommand('git add README.md');
+      await executeCommand('git commit -m "Update README"');
+      expect(await getExercise('lesson-4', '4-3')?.validate()).toBe(true);
+    });
+  });
+
   describe('Lesson 4: The Edit-Stage-Commit Cycle', () => {
     beforeEach(async () => {
       // Lesson 4 assumes lessons 1-3 completed: repo initialized with one commit
