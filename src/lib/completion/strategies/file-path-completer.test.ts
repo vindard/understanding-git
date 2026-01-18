@@ -7,6 +7,7 @@ vi.mock('../../fs', () => ({
   stat: vi.fn(),
 }));
 
+import * as fsLib from '../../fs';
 import { FilePathCompleter } from './file-path-completer';
 
 function createContext(overrides: Partial<CompletionContext>): CompletionContext {
@@ -63,6 +64,89 @@ describe('FilePathCompleter', () => {
     it('returns false for unknown command', () => {
       const context = createContext({ cmd: 'echo', parts: ['echo', ''] });
       expect(completer.canHandle(context)).toBe(false);
+    });
+  });
+
+  describe('complete', () => {
+    it('excludes .git directory for git add', async () => {
+      vi.mocked(fsLib.readdir).mockResolvedValue(['.git', 'README.md', 'src']);
+      vi.mocked(fsLib.stat).mockImplementation(async (path) => {
+        if (path.includes('.git') || path.includes('src')) return { type: 'dir' };
+        return { type: 'file' };
+      });
+
+      const context = createContext({
+        line: 'git add ',
+        lineUpToCursor: 'git add ',
+        cursorPos: 8,
+        cmd: 'git',
+        parts: ['git', 'add', ''],
+        endsWithSpace: true,
+      });
+
+      const result = await completer.complete(context);
+
+      expect(result.suggestions).not.toContain('.git/');
+      expect(result.suggestions).toContain('README.md');
+      expect(result.suggestions).toContain('src/');
+    });
+
+    it('excludes files already in command for git add', async () => {
+      vi.mocked(fsLib.readdir).mockResolvedValue(['README.md', 'index.js', 'style.css']);
+      vi.mocked(fsLib.stat).mockResolvedValue({ type: 'file' });
+
+      const context = createContext({
+        line: 'git add README.md ',
+        lineUpToCursor: 'git add README.md ',
+        cursorPos: 18,
+        cmd: 'git',
+        parts: ['git', 'add', 'README.md', ''],
+        endsWithSpace: true,
+      });
+
+      const result = await completer.complete(context);
+
+      expect(result.suggestions).not.toContain('README.md');
+      expect(result.suggestions).toContain('index.js');
+      expect(result.suggestions).toContain('style.css');
+    });
+
+    it('excludes files already in command for other commands', async () => {
+      vi.mocked(fsLib.readdir).mockResolvedValue(['file1.txt', 'file2.txt', 'file3.txt']);
+      vi.mocked(fsLib.stat).mockResolvedValue({ type: 'file' });
+
+      const context = createContext({
+        line: 'rm file1.txt ',
+        lineUpToCursor: 'rm file1.txt ',
+        cursorPos: 13,
+        cmd: 'rm',
+        parts: ['rm', 'file1.txt', ''],
+        endsWithSpace: true,
+      });
+
+      const result = await completer.complete(context);
+
+      expect(result.suggestions).not.toContain('file1.txt');
+      expect(result.suggestions).toContain('file2.txt');
+      expect(result.suggestions).toContain('file3.txt');
+    });
+
+    it('returns empty when all files already added', async () => {
+      vi.mocked(fsLib.readdir).mockResolvedValue(['README.md']);
+      vi.mocked(fsLib.stat).mockResolvedValue({ type: 'file' });
+
+      const context = createContext({
+        line: 'git add README.md ',
+        lineUpToCursor: 'git add README.md ',
+        cursorPos: 18,
+        cmd: 'git',
+        parts: ['git', 'add', 'README.md', ''],
+        endsWithSpace: true,
+      });
+
+      const result = await completer.complete(context);
+
+      expect(result.suggestions).toEqual([]);
     });
   });
 });

@@ -101,7 +101,7 @@ describe('Tab Completion', () => {
       expect(fsLib.readdir).toHaveBeenCalledWith(CWD);
     });
 
-    it('includes hidden files and directories', async () => {
+    it('includes hidden files but excludes .git directory', async () => {
       vi.mocked(fsLib.readdir).mockResolvedValue([
         'README.md',
         '.git',
@@ -118,7 +118,7 @@ describe('Tab Completion', () => {
 
       expect(result.suggestions).toContain('README.md');
       expect(result.suggestions).toContain('src/');
-      expect(result.suggestions).toContain('.git/');
+      expect(result.suggestions).not.toContain('.git/'); // .git should never be staged
       expect(result.suggestions).toContain('.gitignore');
       expect(result.suggestions).toContain('.env');
     });

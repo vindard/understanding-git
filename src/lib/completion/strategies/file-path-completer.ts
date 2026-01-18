@@ -24,8 +24,19 @@ export class FilePathCompleter implements CompletionStrategy {
     const partial = context.parts[context.parts.length - 1] || '';
     const pathToComplete = context.endsWithSpace ? '' : partial;
     const hideHidden = context.cmd === 'touch';  // touch shouldn't suggest hidden files
+    const isGitAdd = context.cmd === 'git' && context.parts[1] === 'add';
 
-    const suggestions = await this.completeFilePath(pathToComplete, hideHidden);
+    let suggestions = await this.completeFilePath(pathToComplete, hideHidden);
+
+    // For git add, always exclude .git directory
+    if (isGitAdd) {
+      suggestions = suggestions.filter(s => s !== '.git/' && !s.startsWith('.git/'));
+    }
+
+    // Filter out files already present in the command
+    const existingArgs = new Set(context.parts.slice(isGitAdd ? 2 : 1));
+    suggestions = suggestions.filter(s => !existingArgs.has(s) && !existingArgs.has(s.replace(/\/$/, '')));
+
     const replaceFrom = context.endsWithSpace
       ? context.cursorPos
       : context.lineUpToCursor.lastIndexOf(partial);
