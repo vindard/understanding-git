@@ -172,6 +172,16 @@ describe('Completion Service', () => {
       expect(result.suggestions).not.toContain('added.txt');
     });
 
+    it('returns empty suggestions after "git add ." since dot covers all files', async () => {
+      await executeCommand('git init');
+      await fsLib.writeFile(`${CWD}/file1.txt`, 'content');
+      await fsLib.writeFile(`${CWD}/file2.txt`, 'content');
+
+      const result = await getCompletions('git add . ', 10);
+
+      expect(result.suggestions).toHaveLength(0);
+    });
+
     it('works with head command', async () => {
       await fsLib.writeFile(`${CWD}/file.txt`, 'content');
 

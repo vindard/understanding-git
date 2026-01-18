@@ -154,3 +154,10 @@ export function isGitAdd(cmd: string, parts: string[]): boolean {
 export function getExistingArgs(parts: string[], isGitAddCmd: boolean): string[] {
   return parts.slice(isGitAddCmd ? 2 : 1);
 }
+
+/**
+ * Check if "." is in args, meaning all files are already covered.
+ */
+export function hasAllFilesArg(args: string[]): boolean {
+  return args.includes('.');
+}

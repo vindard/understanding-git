@@ -16,6 +16,7 @@ import {
   shouldHideHidden,
   isGitAdd,
   getExistingArgs,
+  hasAllFilesArg,
 } from './filters';
 
 describe('Completion Filters', () => {
@@ -290,6 +291,28 @@ describe('Completion Filters', () => {
 
     it('gets args after subcommand for git add', () => {
       expect(getExistingArgs(['git', 'add', 'file1.txt', ''], true)).toEqual(['file1.txt', '']);
+    });
+  });
+
+  describe('hasAllFilesArg', () => {
+    it('returns true when "." is in args', () => {
+      expect(hasAllFilesArg(['.'])).toBe(true);
+    });
+
+    it('returns true when "." is among multiple args', () => {
+      expect(hasAllFilesArg(['file1.txt', '.'])).toBe(true);
+    });
+
+    it('returns false when "." is not in args', () => {
+      expect(hasAllFilesArg(['file1.txt', 'file2.txt'])).toBe(false);
+    });
+
+    it('returns false for empty args', () => {
+      expect(hasAllFilesArg([])).toBe(false);
+    });
+
+    it('does not match files starting with dot', () => {
+      expect(hasAllFilesArg(['.gitignore', '.env'])).toBe(false);
     });
   });
 });

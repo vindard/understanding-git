@@ -15,6 +15,7 @@ import {
   shouldHideHidden,
   isGitAdd,
   getExistingArgs,
+  hasAllFilesArg,
 } from '../filters';
 
 export class FilePathCompleter implements CompletionStrategy {
@@ -27,6 +28,12 @@ export class FilePathCompleter implements CompletionStrategy {
     const pathToComplete = context.endsWithSpace ? '' : partial;
     const hideHidden = shouldHideHidden(context.cmd);
     const gitAdd = isGitAdd(context.cmd, context.parts);
+    const existingArgs = getExistingArgs(context.parts, gitAdd);
+
+    // If "." is already in args, all files are covered - no more suggestions
+    if (hasAllFilesArg(existingArgs)) {
+      return { suggestions: [], replaceFrom: context.cursorPos, replaceTo: context.cursorPos };
+    }
 
     // Fetch from filesystem
     const rawSuggestions = await this.fetchFileSuggestions(pathToComplete, hideHidden);
@@ -36,7 +43,6 @@ export class FilePathCompleter implements CompletionStrategy {
     if (gitAdd) {
       suggestions = excludeGitDir(suggestions);
     }
-    const existingArgs = getExistingArgs(context.parts, gitAdd);
     suggestions = excludeAlreadyAdded(suggestions, existingArgs);
 
     const replaceFrom = calculateReplaceFrom(
