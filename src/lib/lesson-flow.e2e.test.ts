@@ -13,19 +13,57 @@
  */
 import { describe, it, expect, beforeEach } from 'vitest';
 import { resetFs } from './fs';
-import { gitInit } from './git';
 import { executeCommand } from './commands';
+import { repoIntact, clearGitStateHash } from './gitStateHash';
 import { lessons } from '../data/lessons';
+
+// Helper to init git repo - wraps executeCommand for cleaner tests
+async function gitInit() {
+  await executeCommand('git init');
+}
 
 function getExercise(lessonId: string, exerciseId: string) {
   const lesson = lessons.find((l) => l.id === lessonId);
   return lesson?.exercises.find((e) => e.id === exerciseId);
 }
 
-describe('Lesson Flow Integration Tests (Real Implementations)', () => {
+describe('Lesson Flow E2E Tests', () => {
   beforeEach(async () => {
-    // Reset to clean filesystem before each test
+    // Reset to clean filesystem and clear hash state before each test
     await resetFs();
+    clearGitStateHash();
+  });
+
+  describe('Hash integrity through lesson flow', () => {
+    it('maintains hash integrity through lesson 4 commit', async () => {
+      // This test verifies the bug: hash should remain valid after git commit
+
+      // Lesson 1: init
+      await executeCommand('git init');
+      expect(await repoIntact()).toBe(true);
+
+      // Lesson 2: create and stage file
+      await executeCommand('touch README.md');
+      expect(await repoIntact()).toBe(true);
+
+      await executeCommand('git add README.md');
+      expect(await repoIntact()).toBe(true);
+
+      // Lesson 3: first commit
+      await executeCommand('git commit -m "Initial commit"');
+      expect(await repoIntact()).toBe(true);
+
+      // Lesson 4: edit-stage-commit cycle
+      await executeCommand('echo "# My Project" > README.md');
+      expect(await repoIntact()).toBe(true);
+
+      await executeCommand('git add README.md');
+      expect(await repoIntact()).toBe(true);
+
+      // THIS IS THE FAILING STEP - hash should be valid after commit
+      await executeCommand('git commit -m "Update README with title"');
+      expect(await repoIntact()).toBe(true);
+    });
   });
 
   describe('Lesson 1: Your First Repository', () => {
@@ -274,6 +312,22 @@ describe('Lesson Flow Integration Tests (Real Implementations)', () => {
       valid = await getExercise('lesson-4', '4-3')?.validate();
       expect(valid).toBe(true);
     });
+
+    it('all completed exercise validators remain true after lesson 4 commit', async () => {
+      // This test catches the bug: validators for completed exercises should
+      // remain valid even after completing subsequent exercises.
+
+      // Complete all of lesson 4
+      await executeCommand('echo "# My Project" > README.md');
+      await executeCommand('git add README.md');
+      await executeCommand('git commit -m "Update README with title"');
+
+      // After 4-3 commit, ALL previous validators should still pass
+      // This was failing because hasStagedFiles (4-2) returns false after commit
+      expect(await getExercise('lesson-4', '4-1')?.validate()).toBe(true);
+      expect(await getExercise('lesson-4', '4-2')?.validate()).toBe(true);
+      expect(await getExercise('lesson-4', '4-3')?.validate()).toBe(true);
+    });
   });
 
   describe('Lesson 5: Working with Multiple Files', () => {
@@ -323,6 +377,18 @@ describe('Lesson Flow Integration Tests (Real Implementations)', () => {
       const exercise = getExercise('lesson-5', '5-3');
       const valid = await exercise?.validate();
       expect(valid).toBe(true);
+    });
+
+    it('all completed exercise validators remain true after lesson 5 commit', async () => {
+      // Same bug as lesson 4: hasStagedFiles (5-2) would fail after commit
+      await executeCommand('touch index.html style.css');
+      await executeCommand('git add .');
+      await executeCommand('git commit -m "Add HTML and CSS files"');
+
+      // After 5-3 commit, ALL previous validators should still pass
+      expect(await getExercise('lesson-5', '5-1')?.validate()).toBe(true);
+      expect(await getExercise('lesson-5', '5-2')?.validate()).toBe(true);
+      expect(await getExercise('lesson-5', '5-3')?.validate()).toBe(true);
     });
   });
 

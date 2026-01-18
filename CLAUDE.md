@@ -106,6 +106,26 @@ pnpm test -- --run src/lib/commands/parsing.unit.test.ts
    - Write failing test in `lesson-flow.e2e.test.ts`
    - Implement until test passes
 
+### When Fixing Bugs
+
+Use the **failing test first** workflow with two separate commits:
+
+1. **First commit: Add failing test**
+   - Write a test that reproduces the bug
+   - Verify the test fails (proves the bug exists)
+   - Commit with message like: `test: add failing test for <bug description>`
+
+2. **Second commit: Fix the bug**
+   - Implement the fix
+   - Verify the test now passes
+   - Commit with message like: `fix: <bug description>`
+
+This workflow:
+- Documents the bug in the test history
+- Proves the fix actually addresses the bug
+- Prevents regressions (the test remains in the suite)
+- Makes code review easier (reviewer sees bug reproduction, then fix)
+
 ### Key Principles
 
 - **No mocks**: Extract pure functions instead of mocking

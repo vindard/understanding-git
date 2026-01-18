@@ -104,7 +104,9 @@ export const lessons: Lesson[] = [
         id: '4-2',
         instruction: 'Stage the modified file with <code>git add README.md</code>.',
         hint: 'Type: git add README.md',
-        validate: validators.hasStagedFiles,
+        // Use fileHasContent instead of hasStagedFiles because staging area is
+        // cleared after commit - but file content persists
+        validate: validators.fileHasContent('README.md'),
         successMessage: 'Changes staged! Ready for the next commit.',
         commandPattern: /^git\s+add\s+(README\.md|\.)$/i,
       },
@@ -135,7 +137,9 @@ export const lessons: Lesson[] = [
         id: '5-2',
         instruction: 'Stage all files at once with <code>git add .</code> (the dot means "everything").',
         hint: 'Type: git add .',
-        validate: validators.hasStagedFiles,
+        // Use multipleFilesExist instead of hasStagedFiles because staging area is
+        // cleared after commit - but files persist
+        validate: validators.multipleFilesExist(3),
         successMessage: 'All files staged! The "." is a handy shortcut.',
         commandPattern: /^git\s+add\s+\.$/i,
       },
