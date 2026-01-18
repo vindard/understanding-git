@@ -93,14 +93,16 @@ async function handleMkdirCommand(args: string[]): Promise<CommandResult> {
 }
 
 async function handleTouchCommand(args: string[]): Promise<CommandResult> {
-  if (!args[0]) {
+  if (args.length === 0) {
     return { output: 'touch: missing file operand', success: false };
   }
-  const path = resolvePath(args[0]);
-  try {
-    await fsLib.readFile(path);
-  } catch {
-    await fsLib.writeFile(path, '');
+  for (const arg of args) {
+    const path = resolvePath(arg);
+    try {
+      await fsLib.readFile(path);
+    } catch {
+      await fsLib.writeFile(path, '');
+    }
   }
   return { output: '', success: true };
 }

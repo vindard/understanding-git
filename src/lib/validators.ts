@@ -1,5 +1,5 @@
 import { gitStatus, gitLog } from './git';
-import { stat, readFile } from './fs';
+import { stat, readFile, readdir } from './fs';
 import { CWD } from './config';
 
 /**
@@ -93,8 +93,10 @@ export function fileHasContent(path: string): () => Promise<boolean> {
 export function multipleFilesExist(count: number): () => Promise<boolean> {
   return async (): Promise<boolean> => {
     try {
-      const status = await gitStatus();
-      return status.length >= count;
+      const entries = await readdir(CWD);
+      // Count files, excluding .git directory
+      const files = entries.filter((entry) => entry !== '.git');
+      return files.length >= count;
     } catch {
       return false;
     }

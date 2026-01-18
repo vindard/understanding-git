@@ -10,6 +10,7 @@ vi.mock('./git', () => ({
 vi.mock('./fs', () => ({
   stat: vi.fn(),
   readFile: vi.fn(),
+  readdir: vi.fn(),
 }));
 
 // Import the mocked modules
@@ -307,24 +308,41 @@ describe('Lesson Validators', () => {
   });
 
   describe('multipleFilesExist (exercise 5-1)', () => {
-    it('returns true when there are enough files tracked', async () => {
-      // Exercise 5-1 expects 3 files
-      vi.mocked(gitLib.gitStatus).mockResolvedValue([
-        ['README.md', 1, 1, 1],
-        ['index.html', 0, 2, 0],
-        ['style.css', 0, 2, 0],
+    it('returns true when there are enough files', async () => {
+      // Exercise 5-1 expects 3 files (excluding .git)
+      vi.mocked(fsLib.readdir).mockResolvedValue([
+        '.git',
+        'README.md',
+        'index.html',
+        'style.css',
       ]);
 
       const validator = getValidator('lesson-5', '5-1');
       const result = await validator?.();
 
       expect(result).toBe(true);
+      expect(fsLib.readdir).toHaveBeenCalledWith(CWD);
     });
 
     it('returns false when there are not enough files', async () => {
-      vi.mocked(gitLib.gitStatus).mockResolvedValue([
-        ['README.md', 1, 1, 1],
-        ['index.html', 0, 2, 0],
+      vi.mocked(fsLib.readdir).mockResolvedValue([
+        '.git',
+        'README.md',
+        'index.html',
+      ]);
+
+      const validator = getValidator('lesson-5', '5-1');
+      const result = await validator?.();
+
+      expect(result).toBe(false);
+    });
+
+    it('excludes .git directory from count', async () => {
+      // Only .git and 2 files = 2 files counted (not enough for 3)
+      vi.mocked(fsLib.readdir).mockResolvedValue([
+        '.git',
+        'README.md',
+        'index.html',
       ]);
 
       const validator = getValidator('lesson-5', '5-1');

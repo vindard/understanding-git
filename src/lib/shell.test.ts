@@ -308,6 +308,18 @@ describe('Shell Commands', () => {
       expect(result.success).toBe(false);
       expect(result.output).toContain('missing file operand');
     });
+
+    it('creates multiple files when given multiple arguments', async () => {
+      vi.mocked(fsLib.readFile).mockRejectedValue(new Error('ENOENT'));
+      vi.mocked(fsLib.writeFile).mockResolvedValue(undefined);
+
+      const result = await executeCommand('touch file1.txt file2.txt file3.txt');
+      expect(result.success).toBe(true);
+      expect(fsLib.writeFile).toHaveBeenCalledTimes(3);
+      expect(fsLib.writeFile).toHaveBeenCalledWith(`${CWD}/file1.txt`, '');
+      expect(fsLib.writeFile).toHaveBeenCalledWith(`${CWD}/file2.txt`, '');
+      expect(fsLib.writeFile).toHaveBeenCalledWith(`${CWD}/file3.txt`, '');
+    });
   });
 
   describe('rm command', () => {
