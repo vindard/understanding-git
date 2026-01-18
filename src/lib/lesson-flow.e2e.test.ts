@@ -435,8 +435,118 @@ describe('Lesson Flow E2E Tests', () => {
     });
   });
 
+  describe('Lesson 6: Branching Basics', () => {
+    beforeEach(async () => {
+      // Lesson 6 assumes lessons 1-5 completed
+      await gitInit();
+      await executeCommand('touch README.md');
+      await executeCommand('git add README.md');
+      await executeCommand('git commit -m "Initial commit"');
+      await executeCommand('echo "# My Project" > README.md');
+      await executeCommand('git add README.md');
+      await executeCommand('git commit -m "Update README with title"');
+      await executeCommand('touch index.html style.css');
+      await executeCommand('git add .');
+      await executeCommand('git commit -m "Add HTML and CSS files"');
+    });
+
+    it('step 6-1: git branch lists current branch', async () => {
+      const result = await executeCommand('git branch');
+      expect(result.success).toBe(true);
+      expect(result.output).toContain('master');
+
+      const exercise = getExercise('lesson-6', '6-1');
+      const valid = await exercise?.validate();
+      expect(valid).toBe(true);
+    });
+
+    it('step 6-2: git branch feature creates new branch', async () => {
+      const result = await executeCommand('git branch feature');
+      expect(result.success).toBe(true);
+
+      const exercise = getExercise('lesson-6', '6-2');
+      const valid = await exercise?.validate();
+      expect(valid).toBe(true);
+    });
+
+    it('step 6-3: git branch shows multiple branches', async () => {
+      await executeCommand('git branch feature');
+
+      const result = await executeCommand('git branch');
+      expect(result.success).toBe(true);
+      expect(result.output).toContain('feature');
+      expect(result.output).toContain('master');
+
+      const exercise = getExercise('lesson-6', '6-3');
+      const valid = await exercise?.validate();
+      expect(valid).toBe(true);
+    });
+
+    it('step 6-4: git checkout feature switches branch', async () => {
+      await executeCommand('git branch feature');
+
+      const result = await executeCommand('git checkout feature');
+      expect(result.success).toBe(true);
+
+      const exercise = getExercise('lesson-6', '6-4');
+      const valid = await exercise?.validate();
+      expect(valid).toBe(true);
+    });
+
+    it('step 6-5: git branch confirms on feature branch', async () => {
+      await executeCommand('git branch feature');
+      await executeCommand('git checkout feature');
+
+      const result = await executeCommand('git branch');
+      expect(result.success).toBe(true);
+
+      const exercise = getExercise('lesson-6', '6-5');
+      const valid = await exercise?.validate();
+      expect(valid).toBe(true);
+    });
+
+    it('all completed exercise validators remain true after lesson 6', async () => {
+      await executeCommand('git branch feature');
+      await executeCommand('git checkout feature');
+
+      // After completing lesson 6, ALL validators should still pass
+      expect(await getExercise('lesson-6', '6-1')?.validate()).toBe(true);
+      expect(await getExercise('lesson-6', '6-2')?.validate()).toBe(true);
+      expect(await getExercise('lesson-6', '6-3')?.validate()).toBe(true);
+      expect(await getExercise('lesson-6', '6-4')?.validate()).toBe(true);
+      expect(await getExercise('lesson-6', '6-5')?.validate()).toBe(true);
+    });
+  });
+
+  describe('Lesson 5 → 6 Transition', () => {
+    it('clean working tree from lesson 5 enables lesson 6', async () => {
+      // Complete lessons 1-5
+      await gitInit();
+      await executeCommand('touch README.md');
+      await executeCommand('git add README.md');
+      await executeCommand('git commit -m "Initial commit"');
+      await executeCommand('echo "# My Project" > README.md');
+      await executeCommand('git add README.md');
+      await executeCommand('git commit -m "Update README with title"');
+      await executeCommand('touch index.html style.css');
+      await executeCommand('git add .');
+      await executeCommand('git commit -m "Add HTML and CSS files"');
+
+      // Verify lesson 5 is complete
+      expect(await getExercise('lesson-5', '5-3')?.validate()).toBe(true);
+
+      // Now lesson 6-1 should work
+      const result = await executeCommand('git branch');
+      expect(result.success).toBe(true);
+
+      const ex61 = getExercise('lesson-6', '6-1');
+      const valid = await ex61?.validate();
+      expect(valid).toBe(true);
+    });
+  });
+
   describe('Full Lesson Sequence', () => {
-    it('completes lessons 1-5 in sequence', async () => {
+    it('completes lessons 1-6 in sequence', async () => {
       // Lesson 1: Initialize repository
       await gitInit();
       expect(await getExercise('lesson-1', '1-1')?.validate()).toBe(true);
@@ -480,6 +590,22 @@ describe('Lesson Flow E2E Tests', () => {
 
       await executeCommand('git commit -m "Add HTML and CSS"');
       expect(await getExercise('lesson-5', '5-3')?.validate()).toBe(true);
+
+      // Lesson 6: Branching basics
+      await executeCommand('git branch');
+      expect(await getExercise('lesson-6', '6-1')?.validate()).toBe(true);
+
+      await executeCommand('git branch feature');
+      expect(await getExercise('lesson-6', '6-2')?.validate()).toBe(true);
+
+      await executeCommand('git branch');
+      expect(await getExercise('lesson-6', '6-3')?.validate()).toBe(true);
+
+      await executeCommand('git checkout feature');
+      expect(await getExercise('lesson-6', '6-4')?.validate()).toBe(true);
+
+      await executeCommand('git branch');
+      expect(await getExercise('lesson-6', '6-5')?.validate()).toBe(true);
     });
   });
 });

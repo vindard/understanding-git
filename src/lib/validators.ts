@@ -1,4 +1,4 @@
-import { gitStatus, gitLog } from './git';
+import { gitStatus, gitLog, gitCurrentBranch, gitListBranches } from './git';
 import { stat, readFile, readdir } from './fs';
 import { CWD } from './config';
 
@@ -110,6 +110,37 @@ export async function workingTreeClean(): Promise<boolean> {
     return status.every(([, head, workdir, stage]) =>
       head === 1 && workdir === 1 && stage === 1
     );
+  } catch {
+    return false;
+  }
+}
+
+export function isOnBranch(branchName: string): () => Promise<boolean> {
+  return async (): Promise<boolean> => {
+    try {
+      const current = await gitCurrentBranch();
+      return current === branchName;
+    } catch {
+      return false;
+    }
+  };
+}
+
+export function branchExists(branchName: string): () => Promise<boolean> {
+  return async (): Promise<boolean> => {
+    try {
+      const branches = await gitListBranches();
+      return branches.includes(branchName);
+    } catch {
+      return false;
+    }
+  };
+}
+
+export async function hasMultipleBranches(): Promise<boolean> {
+  try {
+    const branches = await gitListBranches();
+    return branches.length >= 2;
   } catch {
     return false;
   }
