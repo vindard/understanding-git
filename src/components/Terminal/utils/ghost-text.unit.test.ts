@@ -8,6 +8,12 @@ describe('computeGhostText', () => {
     expect(result).toBe('t');
   });
 
+  it('returns ghost text for single character command', () => {
+    // User typed "g", suggestion is "git", replaceFrom is 0
+    const result = computeGhostText('g', 1, 'git', 0);
+    expect(result).toBe('it');
+  });
+
   it('returns full suggestion when nothing typed yet', () => {
     // User typed "git " (space), suggestion is "init", replaceFrom is 4
     const result = computeGhostText('git ', 4, 'init', 4);

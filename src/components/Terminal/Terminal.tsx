@@ -6,7 +6,7 @@ import { getCompletions } from '../../lib/completion/index';
 import type { CommandResult } from '../../lib/commands/types';
 import { findPrevWordBoundary, findNextWordBoundary } from './utils/word-navigation';
 import { buildLineOutput } from './utils/line-output';
-import { isMacPlatform, getShortcutHint, shouldShowHint } from './utils/shortcut-hint';
+import { isMacPlatform, getShortcutHint, shouldShowHint, shouldPrioritizeAdvanceHint } from './utils/shortcut-hint';
 import { cycleIndex } from './utils/completion-cycling';
 import { computeGhostText } from './utils/ghost-text';
 import '@xterm/xterm/css/xterm.css';
@@ -99,6 +99,8 @@ export function Terminal({ onCommand, canAdvanceLesson }: TerminalProps) {
     const shortcutHint = getShortcutHint(isMacPlatform());
 
     const showHint = () => {
+      // Don't show advance hint if ghost text is visible
+      if (ghostText) return;
       if (shouldShowHint(currentLine, canAdvanceLessonRef.current ?? false, hintVisible)) {
         // Write a space for cursor to sit on, then the dim hint
         term.write(` \x1b[2m${shortcutHint}\x1b[0m`);
@@ -158,9 +160,28 @@ export function Terminal({ onCommand, canAdvanceLesson }: TerminalProps) {
     };
 
     const fetchGhostText = () => {
-      getCompletions(currentLine, cursorPos).then(({ suggestions, replaceFrom }) => {
+      // Prioritize advance hint over ghost text at end of lesson
+      if (shouldPrioritizeAdvanceHint(currentLine, canAdvanceLessonRef.current ?? false)) {
+        if (ghostText) {
+          clearGhostText();
+          updateLine();
+        }
+        showHint();
+        return;
+      }
+
+      // Capture current state for the async callback
+      const capturedLine = currentLine;
+      const capturedCursorPos = cursorPos;
+
+      getCompletions(capturedLine, capturedCursorPos).then(({ suggestions, replaceFrom }) => {
+        // Only apply if the line hasn't changed since we started fetching
+        if (currentLine !== capturedLine || cursorPos !== capturedCursorPos) {
+          return;
+        }
+
         if (suggestions.length > 0) {
-          const newGhost = computeGhostText(currentLine, cursorPos, suggestions[0], replaceFrom);
+          const newGhost = computeGhostText(capturedLine, capturedCursorPos, suggestions[0], replaceFrom);
           ghostText = newGhost;
           ghostReplaceFrom = replaceFrom;
           updateLine();
@@ -169,6 +190,8 @@ export function Terminal({ onCommand, canAdvanceLesson }: TerminalProps) {
             clearGhostText();
             updateLine();
           }
+          // No ghost text - show advance hint if applicable
+          showHint();
         }
       });
     };
@@ -226,7 +249,7 @@ export function Terminal({ onCommand, canAdvanceLesson }: TerminalProps) {
     // Welcome message (dimmed)
     term.write(welcomeMessage + '\r\n\r\n');
     term.write('$ ');
-    showHint();
+    fetchGhostText();
 
     term.onKey(({ key, domEvent }) => {
       const printable = !domEvent.altKey && !domEvent.ctrlKey && !domEvent.metaKey;
@@ -256,15 +279,15 @@ export function Terminal({ onCommand, canAdvanceLesson }: TerminalProps) {
           onCommandRef.current(cmd).then((result) => {
             writeOutput(term, result.output);
             term.write('$ ');
-            showHint();
+            fetchGhostText();
           }).catch((err) => {
             writeOutput(term, `Error: ${err.message}`);
             term.write('$ ');
-            showHint();
+            fetchGhostText();
           });
         } else {
           term.write('$ ');
-          showHint();
+          fetchGhostText();
         }
       } else if (domEvent.key === 'Backspace') {
         resetCompletion();
@@ -287,12 +310,7 @@ export function Terminal({ onCommand, canAdvanceLesson }: TerminalProps) {
             cursorPos--;
             updateLine();
           }
-          // Show hint if line is now empty, otherwise fetch ghost text
-          if (currentLine === '') {
-            showHint();
-          } else {
-            fetchGhostText();
-          }
+          fetchGhostText();
         }
       } else if (domEvent.key === 'Delete') {
         resetCompletion();
@@ -300,12 +318,7 @@ export function Terminal({ onCommand, canAdvanceLesson }: TerminalProps) {
         if (cursorPos < currentLine.length) {
           currentLine = currentLine.slice(0, cursorPos) + currentLine.slice(cursorPos + 1);
           updateLine();
-          // Show hint if line is now empty, otherwise fetch ghost text
-          if (currentLine === '') {
-            showHint();
-          } else {
-            fetchGhostText();
-          }
+          fetchGhostText();
         }
       } else if (domEvent.key === 'ArrowLeft') {
         resetCompletion();
@@ -394,11 +407,7 @@ export function Terminal({ onCommand, canAdvanceLesson }: TerminalProps) {
           currentLine = currentLine.slice(cursorPos);
           cursorPos = 0;
           updateLine();
-          if (currentLine === '') {
-            showHint();
-          } else {
-            fetchGhostText();
-          }
+          fetchGhostText();
         }
       } else if (domEvent.ctrlKey && domEvent.key === 'k') {
         // Ctrl+K: Delete from cursor to end of line
@@ -407,11 +416,7 @@ export function Terminal({ onCommand, canAdvanceLesson }: TerminalProps) {
         if (cursorPos < currentLine.length) {
           currentLine = currentLine.slice(0, cursorPos);
           updateLine();
-          if (currentLine === '') {
-            showHint();
-          } else {
-            fetchGhostText();
-          }
+          fetchGhostText();
         }
       } else if (domEvent.ctrlKey && domEvent.key === 'w') {
         // Ctrl+W: Delete previous word
@@ -422,11 +427,7 @@ export function Terminal({ onCommand, canAdvanceLesson }: TerminalProps) {
           currentLine = currentLine.slice(0, newPos) + currentLine.slice(cursorPos);
           cursorPos = newPos;
           updateLine();
-          if (currentLine === '') {
-            showHint();
-          } else {
-            fetchGhostText();
-          }
+          fetchGhostText();
         }
       } else if (domEvent.ctrlKey && domEvent.key === 'l') {
         // Ctrl+L: Clear screen (preserve welcome message)

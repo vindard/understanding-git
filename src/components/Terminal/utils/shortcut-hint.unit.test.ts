@@ -1,5 +1,5 @@
 import { describe, it, expect } from 'vitest';
-import { getShortcutHint, shouldShowHint } from './shortcut-hint';
+import { getShortcutHint, shouldShowHint, shouldPrioritizeAdvanceHint } from './shortcut-hint';
 
 describe('shortcut-hint', () => {
   describe('getShortcutHint', () => {
@@ -37,6 +37,27 @@ describe('shortcut-hint', () => {
 
     it('returns false when all conditions are negative', () => {
       expect(shouldShowHint('git status', false, true)).toBe(false);
+    });
+  });
+
+  describe('shouldPrioritizeAdvanceHint', () => {
+    it('returns true when line is empty and can advance lesson', () => {
+      // This ensures the advance hint is shown instead of ghost text at lesson end
+      expect(shouldPrioritizeAdvanceHint('', true)).toBe(true);
+    });
+
+    it('returns false when line is not empty even if can advance', () => {
+      // Ghost text should be shown when user is typing
+      expect(shouldPrioritizeAdvanceHint('git', true)).toBe(false);
+    });
+
+    it('returns false when cannot advance lesson', () => {
+      // Ghost text should be shown during normal lesson progress
+      expect(shouldPrioritizeAdvanceHint('', false)).toBe(false);
+    });
+
+    it('returns false when line has content and cannot advance', () => {
+      expect(shouldPrioritizeAdvanceHint('git status', false)).toBe(false);
     });
   });
 });

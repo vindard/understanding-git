@@ -23,3 +23,15 @@ export function shouldShowHint(
 ): boolean {
   return currentLine === '' && canAdvanceLesson && !hintVisible;
 }
+
+/**
+ * Determines if the advance hint should take priority over ghost text.
+ * When the user can advance to the next lesson and the line is empty,
+ * we should show the "Cmd+Enter for next lesson" hint instead of ghost text.
+ */
+export function shouldPrioritizeAdvanceHint(
+  currentLine: string,
+  canAdvanceLesson: boolean
+): boolean {
+  return currentLine === '' && canAdvanceLesson;
+}
