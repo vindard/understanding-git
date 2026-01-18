@@ -1,8 +1,5 @@
 import { vi, beforeEach } from 'vitest';
-
-// Mock IndexedDB for LightningFS
-// happy-dom provides a basic IndexedDB implementation, but we may need
-// to add more sophisticated mocking as tests are developed
+import 'fake-indexeddb/auto';
 
 // Global test utilities
 beforeEach(() => {
