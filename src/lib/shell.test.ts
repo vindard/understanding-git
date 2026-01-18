@@ -219,6 +219,54 @@ describe('Shell Commands', () => {
     });
   });
 
+  describe('head command', () => {
+    it('displays first 10 lines by default', async () => {
+      const lines = Array.from({ length: 15 }, (_, i) => `line ${i + 1}`).join('\n');
+      vi.mocked(fsLib.readFile).mockResolvedValue(lines);
+
+      const result = await executeCommand('head file.txt');
+
+      expect(result.success).toBe(true);
+      expect(result.output).toBe('line 1\nline 2\nline 3\nline 4\nline 5\nline 6\nline 7\nline 8\nline 9\nline 10');
+      expect(fsLib.readFile).toHaveBeenCalledWith(`${CWD}/file.txt`);
+    });
+
+    it('displays all lines if file has fewer than 10 lines', async () => {
+      vi.mocked(fsLib.readFile).mockResolvedValue('line 1\nline 2\nline 3');
+
+      const result = await executeCommand('head file.txt');
+
+      expect(result.success).toBe(true);
+      expect(result.output).toBe('line 1\nline 2\nline 3');
+    });
+
+    it('respects -n option for number of lines', async () => {
+      const lines = Array.from({ length: 10 }, (_, i) => `line ${i + 1}`).join('\n');
+      vi.mocked(fsLib.readFile).mockResolvedValue(lines);
+
+      const result = await executeCommand('head -n 3 file.txt');
+
+      expect(result.success).toBe(true);
+      expect(result.output).toBe('line 1\nline 2\nline 3');
+    });
+
+    it('returns error when no file specified', async () => {
+      const result = await executeCommand('head');
+
+      expect(result.success).toBe(false);
+      expect(result.output).toContain('missing file operand');
+    });
+
+    it('returns error when file not found', async () => {
+      vi.mocked(fsLib.readFile).mockRejectedValue(new Error('ENOENT'));
+
+      const result = await executeCommand('head nonexistent.txt');
+
+      expect(result.success).toBe(false);
+      expect(result.output).toContain('No such file');
+    });
+  });
+
   describe('mkdir command', () => {
     it('creates a directory', async () => {
       vi.mocked(fsLib.mkdir).mockResolvedValue(undefined);

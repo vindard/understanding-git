@@ -54,6 +54,35 @@ async function handleTailCommand(args: string[]): Promise<CommandResult> {
   }
 }
 
+async function handleHeadCommand(args: string[]): Promise<CommandResult> {
+  let numLines = 10;
+  let filePath: string | undefined;
+
+  // Parse arguments
+  for (let i = 0; i < args.length; i++) {
+    if (args[i] === '-n' && args[i + 1]) {
+      numLines = parseInt(args[i + 1], 10);
+      i++; // Skip the next argument
+    } else if (!args[i].startsWith('-')) {
+      filePath = args[i];
+    }
+  }
+
+  if (!filePath) {
+    return { output: 'head: missing file operand', success: false };
+  }
+
+  const path = resolvePath(filePath);
+  try {
+    const content = await fsLib.readFile(path);
+    const lines = content.split('\n');
+    const headLines = lines.slice(0, numLines);
+    return { output: headLines.join('\n'), success: true };
+  } catch {
+    return { output: `head: cannot open '${filePath}': No such file or directory`, success: false };
+  }
+}
+
 async function handleMkdirCommand(args: string[]): Promise<CommandResult> {
   if (!args[0]) {
     return { output: 'mkdir: missing operand', success: false };
@@ -136,6 +165,14 @@ registerCommand({
   description: 'Display last lines of a file',
   usage: '[-n <lines>] <file>',
   handler: handleTailCommand,
+  category: 'file',
+});
+
+registerCommand({
+  name: 'head',
+  description: 'Display first lines of a file',
+  usage: '[-n <lines>] <file>',
+  handler: handleHeadCommand,
   category: 'file',
 });
 
