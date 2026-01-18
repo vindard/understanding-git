@@ -94,11 +94,12 @@ export const lessons: Lesson[] = [
     exercises: [
       {
         id: '4-1',
-        instruction: 'Add some content to README.md: <code>echo "# My Project" > README.md</code>',
-        hint: 'Type: echo "# My Project" > README.md',
+        instruction: 'Add some content to README.md using the terminal: <code>echo "# My Project" > README.md</code>, or click the file in the Explorer and edit it directly.',
+        hint: 'Type: echo "# My Project" > README.md (or use the editor)',
         validate: validators.fileHasContent('README.md'),
         successMessage: 'File modified! Git now sees it as "changed".',
         commandPattern: /^echo\s+.+>\s*README\.md$/i,
+        allowEditing: true,
       },
       {
         id: '4-2',

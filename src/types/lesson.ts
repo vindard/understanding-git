@@ -5,6 +5,7 @@ export interface Exercise {
   validate: () => Promise<boolean>;
   successMessage: string;
   commandPattern?: RegExp;  // Optional: require command to match this pattern
+  allowEditing?: boolean;   // Optional: allow file editing in the editor
 }
 
 export interface Lesson {

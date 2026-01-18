@@ -52,11 +52,14 @@ function App() {
     totalLessons,
   } = useLessonProgress(lessons);
 
+  // Get current exercise for various checks
+  const currentExercise = currentLesson?.exercises[currentExerciseIndex] ?? null;
+  const isEditingAllowed = currentExercise?.allowEditing ?? false;
+
   // Update completion system with current exercise for lesson-aware suggestions
   useEffect(() => {
-    const exercise = currentLesson?.exercises[currentExerciseIndex] ?? null;
-    setCurrentExercise(exercise);
-  }, [currentLesson, currentExerciseIndex]);
+    setCurrentExercise(currentExercise);
+  }, [currentExercise]);
 
   // Cmd+Enter (Mac) or Ctrl+Enter (Windows/Linux) to advance to next lesson when ready
   useEffect(() => {
@@ -73,7 +76,7 @@ function App() {
   // Cmd+S (Mac) or Ctrl+S (Windows/Linux) to save current file
   useEffect(() => {
     const handleKeyDown = async (e: KeyboardEvent) => {
-      if (e.key === 's' && (e.metaKey || e.ctrlKey) && selectedFile && isDirty) {
+      if (e.key === 's' && (e.metaKey || e.ctrlKey) && selectedFile && isDirty && isEditingAllowed) {
         e.preventDefault();
         await saveFile();
         await refreshFileTree();
@@ -83,7 +86,7 @@ function App() {
     };
     window.addEventListener('keydown', handleKeyDown);
     return () => window.removeEventListener('keydown', handleKeyDown);
-  }, [selectedFile, isDirty, saveFile, refreshFileTree, checkCurrentExercise, checkStateIntegrity]);
+  }, [selectedFile, isDirty, isEditingAllowed, saveFile, refreshFileTree, checkCurrentExercise, checkStateIntegrity]);
 
   const handleSave = async () => {
     if (isDirty) {
@@ -150,9 +153,9 @@ function App() {
                           <div className={styles.editorHeader}>
                             <span className={styles.editorFilename}>
                               {selectedFile.replace(`${CWD}/`, '')}
-                              {isDirty && <span className={styles.unsavedIndicator}>●</span>}
+                              {isDirty && isEditingAllowed && <span className={styles.unsavedIndicator}>●</span>}
                             </span>
-                            {isDirty && (
+                            {isDirty && isEditingAllowed && (
                               <button
                                 className={styles.saveBtn}
                                 onClick={handleSave}
@@ -167,10 +170,10 @@ function App() {
                           </div>
                           <div className={styles.editorContent}>
                             <FileViewer
-                              content={editedContent}
+                              content={isEditingAllowed ? editedContent : fileContent}
                               path={selectedFile}
-                              onChange={handleContentChange}
-                              readOnly={false}
+                              onChange={isEditingAllowed ? handleContentChange : undefined}
+                              readOnly={!isEditingAllowed}
                             />
                           </div>
                         </>
