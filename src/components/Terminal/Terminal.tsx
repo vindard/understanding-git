@@ -8,6 +8,7 @@ import { findPrevWordBoundary, findNextWordBoundary } from './utils/word-navigat
 import { buildLineOutput } from './utils/line-output';
 import { isMacPlatform, getShortcutHint, shouldShowHint } from './utils/shortcut-hint';
 import { cycleIndex } from './utils/completion-cycling';
+import { computeGhostText } from './utils/ghost-text';
 import '@xterm/xterm/css/xterm.css';
 import styles from './Terminal.module.css';
 
@@ -90,6 +91,10 @@ export function Terminal({ onCommand, canAdvanceLesson }: TerminalProps) {
     let historyIndex = -1;
     let hintVisible = false;
 
+    // Ghost text state for inline completion preview
+    let ghostText = '';
+    let ghostReplaceFrom = 0;
+
     // Shortcut hint for advancing to next lesson
     const shortcutHint = getShortcutHint(isMacPlatform());
 
@@ -142,9 +147,41 @@ export function Terminal({ onCommand, canAdvanceLesson }: TerminalProps) {
     };
 
     const updateLine = () => {
-      const { output, newPrevLength } = buildLineOutput(currentLine, cursorPos, prevLineLength);
+      const { output, newPrevLength } = buildLineOutput(currentLine, cursorPos, prevLineLength, ghostText);
       term.write(output);
       prevLineLength = newPrevLength;
+    };
+
+    const clearGhostText = () => {
+      ghostText = '';
+      ghostReplaceFrom = 0;
+    };
+
+    const fetchGhostText = () => {
+      getCompletions(currentLine, cursorPos).then(({ suggestions, replaceFrom }) => {
+        if (suggestions.length > 0) {
+          const newGhost = computeGhostText(currentLine, cursorPos, suggestions[0], replaceFrom);
+          ghostText = newGhost;
+          ghostReplaceFrom = replaceFrom;
+          updateLine();
+        } else {
+          if (ghostText) {
+            clearGhostText();
+            updateLine();
+          }
+        }
+      });
+    };
+
+    const acceptGhostText = (): boolean => {
+      if (ghostText) {
+        currentLine = currentLine.slice(0, cursorPos) + ghostText + currentLine.slice(cursorPos);
+        cursorPos += ghostText.length;
+        clearGhostText();
+        updateLine();
+        return true;
+      }
+      return false;
     };
 
     const applyCompletion = (completion: string, replaceFrom: number) => {
@@ -197,6 +234,7 @@ export function Terminal({ onCommand, canAdvanceLesson }: TerminalProps) {
       if (domEvent.key === 'Enter') {
         resetCompletion();
         clearHint();
+        clearGhostText();
         const cmd = currentLine.trim();
         const isClearCmd = cmd === 'clear';
 
@@ -230,6 +268,7 @@ export function Terminal({ onCommand, canAdvanceLesson }: TerminalProps) {
         }
       } else if (domEvent.key === 'Backspace') {
         resetCompletion();
+        clearGhostText();
         if (cursorPos > 0) {
           if (domEvent.metaKey) {
             // Cmd+Backspace: Delete from cursor to beginning of line
@@ -248,23 +287,29 @@ export function Terminal({ onCommand, canAdvanceLesson }: TerminalProps) {
             cursorPos--;
             updateLine();
           }
-          // Show hint if line is now empty
+          // Show hint if line is now empty, otherwise fetch ghost text
           if (currentLine === '') {
             showHint();
+          } else {
+            fetchGhostText();
           }
         }
       } else if (domEvent.key === 'Delete') {
         resetCompletion();
+        clearGhostText();
         if (cursorPos < currentLine.length) {
           currentLine = currentLine.slice(0, cursorPos) + currentLine.slice(cursorPos + 1);
           updateLine();
-          // Show hint if line is now empty
+          // Show hint if line is now empty, otherwise fetch ghost text
           if (currentLine === '') {
             showHint();
+          } else {
+            fetchGhostText();
           }
         }
       } else if (domEvent.key === 'ArrowLeft') {
         resetCompletion();
+        clearGhostText();
         if (domEvent.altKey) {
           // Option+ArrowLeft: Jump to previous word boundary
           if (cursorPos > 0) {
@@ -280,10 +325,12 @@ export function Terminal({ onCommand, canAdvanceLesson }: TerminalProps) {
           cursorPos--;
           term.write('\x1b[D');
         }
+        updateLine();
       } else if (domEvent.key === 'ArrowRight') {
         resetCompletion();
         if (domEvent.altKey) {
           // Option+ArrowRight: Jump to next word boundary
+          clearGhostText();
           if (cursorPos < currentLine.length) {
             const newPos = findNextWordBoundary(currentLine, cursorPos);
             const moveBy = newPos - cursorPos;
@@ -292,62 +339,84 @@ export function Terminal({ onCommand, canAdvanceLesson }: TerminalProps) {
               cursorPos = newPos;
             }
           }
+          updateLine();
         } else if (cursorPos < currentLine.length) {
           // Regular ArrowRight: Move one character
+          clearGhostText();
           cursorPos++;
           term.write('\x1b[C');
+          updateLine();
+        } else if (ghostText) {
+          // At end of line with ghost text - accept it
+          acceptGhostText();
+          fetchGhostText();
         }
       // ArrowUp/ArrowDown handled in attachCustomKeyEventHandler
       } else if (domEvent.key === 'Home') {
         resetCompletion();
+        clearGhostText();
         if (cursorPos > 0) {
           term.write(`\x1b[${cursorPos}D`);
           cursorPos = 0;
         }
+        updateLine();
       } else if (domEvent.key === 'End') {
         resetCompletion();
+        clearGhostText();
         if (cursorPos < currentLine.length) {
           term.write(`\x1b[${currentLine.length - cursorPos}C`);
           cursorPos = currentLine.length;
         }
+        updateLine();
       } else if (domEvent.ctrlKey && domEvent.key === 'a') {
         // Ctrl+A: Move cursor to beginning of line
         resetCompletion();
+        clearGhostText();
         if (cursorPos > 0) {
           term.write(`\x1b[${cursorPos}D`);
           cursorPos = 0;
         }
+        updateLine();
       } else if (domEvent.ctrlKey && domEvent.key === 'e') {
         // Ctrl+E: Move cursor to end of line
         resetCompletion();
+        clearGhostText();
         if (cursorPos < currentLine.length) {
           term.write(`\x1b[${currentLine.length - cursorPos}C`);
           cursorPos = currentLine.length;
         }
+        updateLine();
       } else if (domEvent.ctrlKey && domEvent.key === 'u') {
         // Ctrl+U: Delete from cursor to beginning of line
         resetCompletion();
+        clearGhostText();
         if (cursorPos > 0) {
           currentLine = currentLine.slice(cursorPos);
           cursorPos = 0;
           updateLine();
           if (currentLine === '') {
             showHint();
+          } else {
+            fetchGhostText();
           }
         }
       } else if (domEvent.ctrlKey && domEvent.key === 'k') {
         // Ctrl+K: Delete from cursor to end of line
         resetCompletion();
+        clearGhostText();
         if (cursorPos < currentLine.length) {
           currentLine = currentLine.slice(0, cursorPos);
           updateLine();
           if (currentLine === '') {
             showHint();
+          } else {
+            fetchGhostText();
           }
         }
       } else if (domEvent.ctrlKey && domEvent.key === 'w') {
         // Ctrl+W: Delete previous word
         resetCompletion();
+        clearGhostText();
         if (cursorPos > 0) {
           const newPos = findPrevWordBoundary(currentLine, cursorPos);
           currentLine = currentLine.slice(0, newPos) + currentLine.slice(cursorPos);
@@ -355,11 +424,14 @@ export function Terminal({ onCommand, canAdvanceLesson }: TerminalProps) {
           updateLine();
           if (currentLine === '') {
             showHint();
+          } else {
+            fetchGhostText();
           }
         }
       } else if (domEvent.ctrlKey && domEvent.key === 'l') {
         // Ctrl+L: Clear screen (preserve welcome message)
         resetCompletion();
+        clearGhostText();
         term.write('\x1b[2J\x1b[H');
         term.write(welcomeMessage + '\r\n\r\n');
         term.write('$ ' + currentLine);
@@ -370,6 +442,7 @@ export function Terminal({ onCommand, canAdvanceLesson }: TerminalProps) {
         }
       } else if (domEvent.key === 'Tab') {
         domEvent.preventDefault();
+        clearGhostText();
 
         if (completionState) {
           // Already in completion mode - cycle through suggestions
@@ -394,6 +467,8 @@ export function Terminal({ onCommand, canAdvanceLesson }: TerminalProps) {
               // Single completion - apply it directly
               applyCompletion(suggestions[0], replaceFrom);
               updateLine();
+              // Fetch new ghost text after completion
+              fetchGhostText();
             } else {
               // Multiple completions - enter completion mode
               completionState = {
@@ -411,10 +486,13 @@ export function Terminal({ onCommand, canAdvanceLesson }: TerminalProps) {
       } else if (printable && key.length === 1) {
         resetCompletion();
         clearHint();
+        clearGhostText();
         // Insert character at cursor position
         currentLine = currentLine.slice(0, cursorPos) + key + currentLine.slice(cursorPos);
         cursorPos++;
         updateLine();
+        // Fetch new ghost text for inline preview
+        fetchGhostText();
       }
     });
 
@@ -428,6 +506,7 @@ export function Terminal({ onCommand, canAdvanceLesson }: TerminalProps) {
       // Handle ArrowUp/ArrowDown here to prevent xterm from processing them
       if (e.key === 'ArrowUp' && e.type === 'keydown') {
         resetCompletion();
+        clearGhostText();
         if (history.length > 0 && historyIndex > 0) {
           historyIndex--;
           currentLine = history[historyIndex];
@@ -438,6 +517,7 @@ export function Terminal({ onCommand, canAdvanceLesson }: TerminalProps) {
       }
       if (e.key === 'ArrowDown' && e.type === 'keydown') {
         resetCompletion();
+        clearGhostText();
         if (historyIndex < history.length - 1) {
           historyIndex++;
           currentLine = history[historyIndex];
@@ -453,6 +533,7 @@ export function Terminal({ onCommand, canAdvanceLesson }: TerminalProps) {
       }
       if (e.metaKey && !e.shiftKey && !e.altKey && !e.ctrlKey && (e.key === 'ArrowLeft' || e.key === 'ArrowRight')) {
         if (e.type === 'keydown') {
+          clearGhostText();
           if (e.key === 'ArrowLeft' && cursorPos > 0) {
             // Cmd+ArrowLeft: Jump to beginning of line
             term.write(`\x1b[${cursorPos}D`);
@@ -462,6 +543,7 @@ export function Terminal({ onCommand, canAdvanceLesson }: TerminalProps) {
             term.write(`\x1b[${currentLine.length - cursorPos}C`);
             cursorPos = currentLine.length;
           }
+          updateLine();
         }
         return false; // Prevent default handling
       }
