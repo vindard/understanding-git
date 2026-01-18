@@ -25,7 +25,7 @@ export type { CommandResult } from './types';
  * Parse a command line into parts, respecting quoted strings.
  * Quotes are removed from the parsed values.
  */
-function parseCommandLine(input: string): string[] {
+export function parseCommandLine(input: string): string[] {
   const parts: string[] = [];
   let current = '';
   let inQuote = false;
@@ -64,7 +64,7 @@ function parseCommandLine(input: string): string[] {
  * Extract output redirection from parsed parts.
  * Returns the parts without redirection, the output file path, and whether to append.
  */
-function extractRedirection(parts: string[]): { parts: string[]; outputFile: string | null; append: boolean } {
+export function extractRedirection(parts: string[]): { parts: string[]; outputFile: string | null; append: boolean } {
   // Check for append (>>) first
   const appendIndex = parts.indexOf('>>');
   if (appendIndex !== -1) {

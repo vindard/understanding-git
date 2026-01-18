@@ -3,7 +3,7 @@ import { CWD } from '../config';
 import { registerCommand } from './registry';
 import type { CommandResult } from './types';
 
-function resolvePath(path: string): string {
+export function resolvePath(path: string): string {
   if (path.startsWith('/')) {
     return path;
   }
