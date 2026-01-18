@@ -200,6 +200,50 @@ describe('Tab Completion', () => {
     });
   });
 
+  describe('file path completion for head', () => {
+    it('suggests files after "head "', async () => {
+      vi.mocked(fsLib.readdir).mockResolvedValue(['README.md', 'index.js']);
+      vi.mocked(fsLib.stat).mockResolvedValue({ type: 'file' });
+
+      const result = await getCompletions('head ', 5);
+
+      expect(result.suggestions).toContain('README.md');
+      expect(result.suggestions).toContain('index.js');
+    });
+
+    it('suggests files after "head -n 5 "', async () => {
+      vi.mocked(fsLib.readdir).mockResolvedValue(['README.md', 'logs.txt']);
+      vi.mocked(fsLib.stat).mockResolvedValue({ type: 'file' });
+
+      const result = await getCompletions('head -n 5 ', 10);
+
+      expect(result.suggestions).toContain('README.md');
+      expect(result.suggestions).toContain('logs.txt');
+    });
+  });
+
+  describe('file path completion for tail', () => {
+    it('suggests files after "tail "', async () => {
+      vi.mocked(fsLib.readdir).mockResolvedValue(['README.md', 'index.js']);
+      vi.mocked(fsLib.stat).mockResolvedValue({ type: 'file' });
+
+      const result = await getCompletions('tail ', 5);
+
+      expect(result.suggestions).toContain('README.md');
+      expect(result.suggestions).toContain('index.js');
+    });
+
+    it('suggests files after "tail -n 5 "', async () => {
+      vi.mocked(fsLib.readdir).mockResolvedValue(['README.md', 'logs.txt']);
+      vi.mocked(fsLib.stat).mockResolvedValue({ type: 'file' });
+
+      const result = await getCompletions('tail -n 5 ', 10);
+
+      expect(result.suggestions).toContain('README.md');
+      expect(result.suggestions).toContain('logs.txt');
+    });
+  });
+
   describe('file path completion for mkdir', () => {
     it('suggests directories after "mkdir "', async () => {
       vi.mocked(fsLib.readdir).mockResolvedValue(['existing-dir', 'file.txt']);

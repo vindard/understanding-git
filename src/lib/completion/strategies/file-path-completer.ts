@@ -1,7 +1,7 @@
 import * as fsLib from '../../fs';
 import { CWD } from '../../config';
 import type { CompletionContext, CompletionResult, CompletionStrategy } from '../types';
-const PATH_COMMANDS = ['ls', 'cat', 'mkdir', 'touch', 'rm'];
+const PATH_COMMANDS = ['ls', 'cat', 'mkdir', 'touch', 'rm', 'head', 'tail'];
 const GIT_PATH_SUBCOMMANDS = ['add'];
 
 export class FilePathCompleter implements CompletionStrategy {
