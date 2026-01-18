@@ -62,6 +62,26 @@ describe('Shell Commands', () => {
       expect(result.success).toBe(true);
       expect(fsLib.writeFile).toHaveBeenCalledWith(`${CWD}/test.txt`, 'hello');
     });
+
+    it('appends text to file with >> redirect', async () => {
+      vi.mocked(fsLib.readFile).mockResolvedValue('existing content\n');
+      vi.mocked(fsLib.writeFile).mockResolvedValue(undefined);
+
+      const result = await executeCommand('echo new line >> test.txt');
+
+      expect(result.success).toBe(true);
+      expect(fsLib.writeFile).toHaveBeenCalledWith(`${CWD}/test.txt`, 'existing content\nnew line');
+    });
+
+    it('creates file with >> if it does not exist', async () => {
+      vi.mocked(fsLib.readFile).mockRejectedValue(new Error('ENOENT'));
+      vi.mocked(fsLib.writeFile).mockResolvedValue(undefined);
+
+      const result = await executeCommand('echo first line >> newfile.txt');
+
+      expect(result.success).toBe(true);
+      expect(fsLib.writeFile).toHaveBeenCalledWith(`${CWD}/newfile.txt`, 'first line');
+    });
   });
 
   describe('pwd command', () => {
