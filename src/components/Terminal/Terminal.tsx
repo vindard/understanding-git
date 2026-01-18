@@ -125,7 +125,6 @@ export function Terminal({ onCommand, canAdvanceLesson, lessonId }: TerminalProp
 
     // Ghost text state for inline completion preview
     let ghostText = '';
-    let ghostReplaceFrom = 0;
 
     // Ghost cursor blink state (custom cursor when ghost text is at cursor position)
     let ghostCursorState: 'on' | 'off' = 'on';
@@ -175,7 +174,6 @@ export function Terminal({ onCommand, canAdvanceLesson, lessonId }: TerminalProp
       cursorPos = 0;
       prevLineLength = 0;
       ghostText = '';
-      ghostReplaceFrom = 0;
       hintVisible = false;
       historyIndex = history.length;
 
@@ -264,7 +262,6 @@ export function Terminal({ onCommand, canAdvanceLesson, lessonId }: TerminalProp
 
     const clearGhostText = () => {
       ghostText = '';
-      ghostReplaceFrom = 0;
       stopGhostCursorBlink();
     };
 
@@ -292,7 +289,6 @@ export function Terminal({ onCommand, canAdvanceLesson, lessonId }: TerminalProp
         if (suggestions.length > 0) {
           const newGhost = computeGhostText(capturedLine, capturedCursorPos, suggestions[0], replaceFrom);
           ghostText = newGhost;
-          ghostReplaceFrom = replaceFrom;
           updateLine();
           updateGhostCursorBlink();
         } else {
@@ -315,7 +311,6 @@ export function Terminal({ onCommand, canAdvanceLesson, lessonId }: TerminalProp
         currentLine = currentLine.slice(0, cursorPos) + ghostText + currentLine.slice(cursorPos);
         cursorPos += ghostText.length;
         ghostText = '';
-        ghostReplaceFrom = 0;
         updateLine();
         return true;
       }
