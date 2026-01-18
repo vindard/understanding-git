@@ -7,6 +7,7 @@ import type { CommandResult } from '../../lib/commands/types';
 import { findPrevWordBoundary, findNextWordBoundary } from './utils/word-navigation';
 import { buildLineOutput } from './utils/line-output';
 import { isMacPlatform, getShortcutHint, shouldShowHint } from './utils/shortcut-hint';
+import { cycleIndex } from './utils/completion-cycling';
 import '@xterm/xterm/css/xterm.css';
 import styles from './Terminal.module.css';
 
@@ -371,8 +372,14 @@ export function Terminal({ onCommand, canAdvanceLesson }: TerminalProps) {
         domEvent.preventDefault();
 
         if (completionState) {
-          // Already in completion mode - cycle to next
-          completionState.index = (completionState.index + 1) % completionState.suggestions.length;
+          // Already in completion mode - cycle through suggestions
+          // Tab = forward, Shift+Tab = backward
+          const direction = domEvent.shiftKey ? 'backward' : 'forward';
+          completionState.index = cycleIndex(
+            completionState.index,
+            completionState.suggestions.length,
+            direction
+          );
           const completion = completionState.suggestions[completionState.index];
           applyCompletion(completion, completionState.replaceFrom);
           updateCompletionsInPlace(completionState.suggestions, completionState.index);

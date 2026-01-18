@@ -128,7 +128,7 @@ This workflow:
 
 ### Key Principles
 
-- **No mocks**: Extract pure functions instead of mocking
+- **No mocks, but stubs are OK**: Extract pure functions instead of mocking dependencies. Stubs (minimal placeholder implementations that return hardcoded values) are acceptable as intermediate TDD steps - write the stub so tests run with assertion failures, then implement the real logic.
 - **Boundary separation**: Keep I/O at the edges, pure logic in the core
 - **Fast feedback**: Unit tests should run in milliseconds
 - **Real implementations**: Integration tests use actual fs/git, not mocks
