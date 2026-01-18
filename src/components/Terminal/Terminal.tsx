@@ -359,7 +359,8 @@ export function Terminal({ onCommand, canAdvanceLesson, lessonId }: TerminalProp
     // Welcome message (dimmed)
     term.write(welcomeMessage + '\r\n\r\n');
     term.write('$ ');
-    fetchGhostText();
+    // Delay initial ghost text fetch to allow other effects (like setCurrentExercise) to run first
+    setTimeout(fetchGhostText, 0);
 
     term.onKey(({ key, domEvent }) => {
       const printable = !domEvent.altKey && !domEvent.ctrlKey && !domEvent.metaKey;
