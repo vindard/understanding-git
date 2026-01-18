@@ -44,6 +44,24 @@ describe('Shell Commands', () => {
       const result = await executeCommand('echo');
       expect(result).toEqual({ output: '', success: true });
     });
+
+    it('writes text to file with > redirect', async () => {
+      vi.mocked(fsLib.writeFile).mockResolvedValue(undefined);
+
+      const result = await executeCommand('echo "# My Project" > README.md');
+
+      expect(result.success).toBe(true);
+      expect(fsLib.writeFile).toHaveBeenCalledWith(`${CWD}/README.md`, '# My Project');
+    });
+
+    it('handles unquoted text with > redirect', async () => {
+      vi.mocked(fsLib.writeFile).mockResolvedValue(undefined);
+
+      const result = await executeCommand('echo hello > test.txt');
+
+      expect(result.success).toBe(true);
+      expect(fsLib.writeFile).toHaveBeenCalledWith(`${CWD}/test.txt`, 'hello');
+    });
   });
 
   describe('pwd command', () => {
