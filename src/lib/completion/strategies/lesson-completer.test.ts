@@ -62,14 +62,43 @@ describe('LessonCompleter', () => {
       expect(completer.canHandle(context)).toBe(true);
     });
 
-    it('returns false when only command typed without space', () => {
+    it('returns false when full command typed without space', () => {
       completer.setExercise(createExercise('Type: git init'));
       const context = createContext({ cmd: 'git', parts: ['git'], endsWithSpace: false });
+      expect(completer.canHandle(context)).toBe(false);
+    });
+
+    it('returns true when typing partial command that matches hint', () => {
+      completer.setExercise(createExercise('Type: touch README.md'));
+      const context = createContext({ cmd: 't', parts: ['t'], endsWithSpace: false });
+      expect(completer.canHandle(context)).toBe(true);
+    });
+
+    it('returns false when partial command does not match hint', () => {
+      completer.setExercise(createExercise('Type: touch README.md'));
+      const context = createContext({ cmd: 'g', parts: ['g'], endsWithSpace: false });
       expect(completer.canHandle(context)).toBe(false);
     });
   });
 
   describe('complete', () => {
+    it('suggests command from hint when typing partial match', async () => {
+      completer.setExercise(createExercise('Type: touch README.md'));
+      const context = createContext({
+        line: 't',
+        lineUpToCursor: 't',
+        cursorPos: 1,
+        cmd: 't',
+        parts: ['t'],
+        endsWithSpace: false,
+      });
+
+      const result = await completer.complete(context);
+      expect(result.suggestions).toEqual(['touch']);
+      expect(result.replaceFrom).toBe(0);
+      expect(result.replaceTo).toBe(1);
+    });
+
     it('suggests first argument when command followed by space', async () => {
       completer.setExercise(createExercise('Type: touch README.md'));
       const context = createContext({

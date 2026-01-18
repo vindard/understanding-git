@@ -19,8 +19,13 @@ export class LessonCompleter implements CompletionStrategy {
     const hintParts = this.parseHint(this.exercise.hint);
     if (!hintParts) return false;
 
-    // Only handle if user's command matches the hint's command
-    // Check parts.length > 1 OR (parts.length === 1 AND ends with space, meaning ready for first arg)
+    // Handle command completion (user typing partial command)
+    if (context.parts.length <= 1 && !context.endsWithSpace) {
+      const partial = context.parts[0] || '';
+      return hintParts.cmd.startsWith(partial) && hintParts.cmd !== partial;
+    }
+
+    // Handle argument completion (command matches, ready for args)
     const readyForArg = context.parts.length > 1 || (context.parts.length === 1 && context.endsWithSpace);
     return context.cmd === hintParts.cmd && readyForArg;
   }
@@ -29,6 +34,18 @@ export class LessonCompleter implements CompletionStrategy {
     const hintParts = this.parseHint(this.exercise!.hint!);
     if (!hintParts) {
       return { suggestions: [], replaceFrom: context.cursorPos, replaceTo: context.cursorPos };
+    }
+
+    // Handle command completion
+    if (context.parts.length <= 1 && !context.endsWithSpace) {
+      const partial = context.parts[0] || '';
+      if (hintParts.cmd.startsWith(partial) && hintParts.cmd !== partial) {
+        return {
+          suggestions: [hintParts.cmd],
+          replaceFrom: 0,
+          replaceTo: context.cursorPos,
+        };
+      }
     }
 
     // Filter out empty parts (trailing space creates empty string in parts array)
