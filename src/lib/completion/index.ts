@@ -29,11 +29,50 @@ export function setCurrentExercise(exercise: Exercise | null): void {
   lessonCompleter.setExercise(exercise);
 }
 
+/**
+ * Parse a command line into parts, respecting quoted strings.
+ * For example: 'echo "# My Project" > README.md' becomes ['echo', '"# My Project"', '>', 'README.md']
+ * Returns both the parts and whether the input ends in an unclosed quote.
+ */
+function parseCommandLine(input: string): { parts: string[]; inQuote: boolean } {
+  const parts: string[] = [];
+  let current = '';
+  let inQuote = false;
+  let quoteChar = '';
+
+  for (const char of input) {
+    if ((char === '"' || char === "'") && !inQuote) {
+      inQuote = true;
+      quoteChar = char;
+      current += char;
+    } else if (char === quoteChar && inQuote) {
+      inQuote = false;
+      current += char;
+      parts.push(current);
+      current = '';
+      quoteChar = '';
+    } else if (char === ' ' && !inQuote) {
+      if (current) {
+        parts.push(current);
+        current = '';
+      }
+    } else {
+      current += char;
+    }
+  }
+  if (current) {
+    parts.push(current);
+  }
+
+  return { parts, inQuote };
+}
+
 function createContext(line: string, cursorPos: number): CompletionContext {
   const lineUpToCursor = line.slice(0, cursorPos);
-  const parts = lineUpToCursor.split(/\s+/);
+  const { parts, inQuote } = parseCommandLine(lineUpToCursor);
   const cmd = parts[0] || '';
-  const endsWithSpace = lineUpToCursor.endsWith(' ');
+  // Only consider ending with space if we're not in an unclosed quote
+  const endsWithSpace = lineUpToCursor.endsWith(' ') && !inQuote;
 
   return {
     line,

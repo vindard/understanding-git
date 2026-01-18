@@ -13,7 +13,7 @@ vi.mock('./git', () => ({
 
 import * as fsLib from './fs';
 import * as gitLib from './git';
-import { getCompletions } from './completion/index';
+import { getCompletions, setCurrentExercise } from './completion/index';
 
 describe('Tab Completion', () => {
   beforeEach(() => {
@@ -346,6 +346,57 @@ describe('Tab Completion', () => {
 
       expect(result.replaceFrom).toBe(3);
       expect(result.replaceTo).toBe(3);
+    });
+  });
+
+  describe('lesson-based completion', () => {
+    afterEach(() => {
+      setCurrentExercise(null);
+    });
+
+    it('suggests quoted argument for echo command', async () => {
+      setCurrentExercise({
+        id: '4-1',
+        instruction: 'Add content to README.md',
+        hint: 'Type: echo "# My Project" > README.md',
+        validate: () => Promise.resolve(true),
+        successMessage: 'Done!',
+        commandPattern: /^echo\s+.+>\s*README\.md$/i,
+      });
+
+      const result = await getCompletions('echo ', 5);
+
+      expect(result.suggestions).toContain('"# My Project"');
+    });
+
+    it('suggests next argument after quoted string', async () => {
+      setCurrentExercise({
+        id: '4-1',
+        instruction: 'Add content to README.md',
+        hint: 'Type: echo "# My Project" > README.md',
+        validate: () => Promise.resolve(true),
+        successMessage: 'Done!',
+        commandPattern: /^echo\s+.+>\s*README\.md$/i,
+      });
+
+      const result = await getCompletions('echo "# My Project" ', 20);
+
+      expect(result.suggestions).toContain('>');
+    });
+
+    it('suggests README.md after redirect operator', async () => {
+      setCurrentExercise({
+        id: '4-1',
+        instruction: 'Add content to README.md',
+        hint: 'Type: echo "# My Project" > README.md',
+        validate: () => Promise.resolve(true),
+        successMessage: 'Done!',
+        commandPattern: /^echo\s+.+>\s*README\.md$/i,
+      });
+
+      const result = await getCompletions('echo "# My Project" > ', 22);
+
+      expect(result.suggestions).toContain('README.md');
     });
   });
 });
