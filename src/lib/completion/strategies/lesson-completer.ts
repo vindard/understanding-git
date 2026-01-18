@@ -87,7 +87,11 @@ export class LessonCompleter implements CompletionStrategy {
    */
   private parseHint(hint: string): { cmd: string; args: string[] } | null {
     // Remove "Type: " prefix if present
-    const cleaned = hint.replace(/^Type:\s*/i, '').trim();
+    let cleaned = hint.replace(/^Type:\s*/i, '').trim();
+    if (!cleaned) return null;
+
+    // Strip parenthetical comments like "(or use the editor)" from the end
+    cleaned = cleaned.replace(/\s+\([^)]*\)\s*$/, '').trim();
     if (!cleaned) return null;
 
     // Handle quoted strings (for commit messages etc.)

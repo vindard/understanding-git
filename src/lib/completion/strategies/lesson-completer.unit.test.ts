@@ -280,5 +280,37 @@ describe('LessonCompleter', () => {
       const result = await completer.complete(context);
       expect(result.suggestions).toEqual(['"Hello World"']);
     });
+
+    it('strips parenthetical comments from hint', async () => {
+      completer.setExercise(createExercise('Type: echo "# My Project" > README.md (or use the editor)'));
+      const context = createContext({
+        line: 'echo "# My Project" > README.md',
+        lineUpToCursor: 'echo "# My Project" > README.md',
+        cursorPos: 31,
+        cmd: 'echo',
+        parts: ['echo', '"# My Project"', '>', 'README.md'],
+        endsWithSpace: false,
+      });
+
+      // Should not suggest anything after the complete command
+      const result = await completer.complete(context);
+      expect(result.suggestions).toEqual([]);
+    });
+
+    it('does not suggest parenthetical text as argument', async () => {
+      completer.setExercise(createExercise('Type: echo "# My Project" > README.md (or use the editor)'));
+      const context = createContext({
+        line: 'echo "# My Project" > README.md ',
+        lineUpToCursor: 'echo "# My Project" > README.md ',
+        cursorPos: 32,
+        cmd: 'echo',
+        parts: ['echo', '"# My Project"', '>', 'README.md', ''],
+        endsWithSpace: true,
+      });
+
+      // Should not suggest "(or" or any part of the parenthetical comment
+      const result = await completer.complete(context);
+      expect(result.suggestions).toEqual([]);
+    });
   });
 });
