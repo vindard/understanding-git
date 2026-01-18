@@ -43,23 +43,32 @@ export function Instructions({
   return (
     <div className={styles.container}>
       <div className={styles.lessonHeader}>
-        {allLessons && onSelectLesson ? (
-          <select
-            className={styles.lessonSelect}
-            value={lesson.id}
-            onChange={(e) => onSelectLesson(e.target.value)}
-          >
-            {allLessons.map((l, idx) => (
-              <option key={l.id} value={l.id}>
-                {idx + 1}. {l.title}
-              </option>
-            ))}
-          </select>
-        ) : (
-          <span className={styles.lessonNumber}>
-            Lesson {lessonNumber} of {totalLessons}
-          </span>
-        )}
+        <div className={styles.lessonNav}>
+          {allLessons && onSelectLesson ? (
+            <div className={styles.lessonSelectWrapper}>
+              <span className={styles.lessonNavText}>
+                Lesson {lessonNumber} of {totalLessons}
+              </span>
+              <span className={styles.lessonNavChevron}>▼</span>
+              <select
+                className={styles.lessonSelect}
+                value={lesson.id}
+                onChange={(e) => onSelectLesson(e.target.value)}
+                aria-label="Select lesson"
+              >
+                {allLessons.map((l, idx) => (
+                  <option key={l.id} value={l.id}>
+                    {idx + 1}. {l.title}
+                  </option>
+                ))}
+              </select>
+            </div>
+          ) : (
+            <span className={styles.lessonNavText}>
+              Lesson {lessonNumber} of {totalLessons}
+            </span>
+          )}
+        </div>
         <h2 className={styles.title}>{lesson.title}</h2>
         <p className={styles.description}>{lesson.description}</p>
       </div>
