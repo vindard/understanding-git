@@ -1,5 +1,41 @@
 # Project Guidelines for Claude
 
+## Meta-Purpose: Learning to One-Shot Projects
+
+This repository serves a dual purpose:
+
+1. **Product**: An interactive Git learning playground
+2. **Meta-learning**: A case study in AI-assisted development workflows
+
+We are using this project to derive and refine a specification (`PROJECT-SPEC.md`) that could enable an AI agent to build the entire project autonomously from scratch. As we develop features incrementally, we extract patterns and requirements that would have been useful to know upfront.
+
+### Updating PROJECT-SPEC.md
+
+**After completing any meaningful task**, update `PROJECT-SPEC.md` to reflect learnings:
+
+- New requirements discovered during implementation
+- Constraints that weren't obvious upfront
+- Quality standards that emerged from bugs or issues
+- Workflow patterns that proved effective
+- Decisions that should be made differently next time
+
+The goal is that `PROJECT-SPEC.md` evolves into a document that, if given to an agent at the start of an empty repo, would enable autonomous execution of the entire project.
+
+**What to capture:**
+- Requirements (what to build)
+- Constraints (technical limitations, must-use technologies)
+- Quality standards (test coverage, performance, UX)
+- Development philosophy (TDD, no mocks, etc.)
+- Agent execution strategies (phasing, checkpoints, recovery)
+
+**What NOT to include:**
+- Specific file structures (agent decides)
+- Code snippets (agent implements)
+- Architecture diagrams (agent designs)
+- Implementation details (agent figures out)
+
+---
+
 ## Testing Philosophy
 
 ### TDD Approach

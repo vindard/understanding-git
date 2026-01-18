@@ -4,6 +4,42 @@ An interactive web-based git playground with curated exercises designed to teach
 
 **Live Demo:** [understanding-git.vercel.app](https://understanding-git.vercel.app/)
 
+---
+
+## 🧪 Meta-Purpose: AI Development Workflow Research
+
+This project serves a dual purpose beyond being a Git learning tool:
+
+### The Experiment
+
+We're using this project as a testbed to develop and refine workflows for **AI-assisted software development**. The goal is to derive a specification document (`PROJECT-SPEC.md`) that could enable an AI agent to build the entire project autonomously from scratch—a "one-shot" execution.
+
+### How It Works
+
+1. **Build incrementally**: We develop features step-by-step with AI assistance
+2. **Extract patterns**: After each meaningful task, we capture what would have been useful to know upfront
+3. **Refine the spec**: `PROJECT-SPEC.md` evolves to include requirements, constraints, and quality standards
+4. **Test the hypothesis**: Eventually, the spec should be complete enough that an agent could recreate the project from an empty repo
+
+### What We're Learning
+
+- How to structure specifications for autonomous agent execution
+- What level of detail enables vs. constrains agent decision-making
+- Effective checkpoint and recovery strategies for long-running tasks
+- Multi-agent orchestration patterns
+- Context management for sessions spanning hours
+
+### Key Files
+
+| File | Purpose |
+|------|---------|
+| `PROJECT-SPEC.md` | Forward-looking spec for autonomous execution |
+| `CLAUDE.md` | Development guidelines and meta-purpose |
+
+The spec intentionally excludes implementation details (file structures, code snippets, architecture) because those are decisions the agent should make. It focuses on **what** to build and **how to work**, not **how to implement**.
+
+---
+
 ## 📖 About
 
 Learning git can be challenging - the command line interface, abstract concepts like branches and merges, and the fear of breaking things can make it intimidating for beginners. This project aims to solve that by providing a safe, browser-based environment where users can:
