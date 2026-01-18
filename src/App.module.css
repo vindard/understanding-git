@@ -90,6 +90,32 @@
   font-family: var(--font-family-mono);
 }
 
+.unsavedIndicator {
+  color: var(--color-warning, #e2b93d);
+  margin-left: var(--spacing-xs);
+  font-size: var(--font-size-xs);
+}
+
+.saveBtn {
+  background: none;
+  border: none;
+  color: var(--color-text-secondary);
+  cursor: pointer;
+  padding: var(--spacing-xs);
+  margin-left: auto;
+  line-height: 1;
+  border-radius: var(--border-radius-sm);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  transition: background-color var(--transition-fast), color var(--transition-fast);
+}
+
+.saveBtn:hover {
+  background-color: var(--color-bg-hover);
+  color: var(--color-text-primary);
+}
+
 .editorContent {
   flex: 1;
   overflow: hidden;

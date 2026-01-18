@@ -20,8 +20,12 @@ function App() {
     files,
     selectedFile,
     fileContent,
+    editedContent,
+    isDirty,
     refreshFileTree,
     handleFileSelect,
+    handleContentChange,
+    saveFile,
     clearSelection,
   } = useFileTree();
 
@@ -65,6 +69,30 @@ function App() {
     window.addEventListener('keydown', handleKeyDown);
     return () => window.removeEventListener('keydown', handleKeyDown);
   }, [isLessonComplete, lessonIndex, totalLessons, goToNextLesson]);
+
+  // Cmd+S (Mac) or Ctrl+S (Windows/Linux) to save current file
+  useEffect(() => {
+    const handleKeyDown = async (e: KeyboardEvent) => {
+      if (e.key === 's' && (e.metaKey || e.ctrlKey) && selectedFile && isDirty) {
+        e.preventDefault();
+        await saveFile();
+        await refreshFileTree();
+        await checkCurrentExercise('');
+        await checkStateIntegrity();
+      }
+    };
+    window.addEventListener('keydown', handleKeyDown);
+    return () => window.removeEventListener('keydown', handleKeyDown);
+  }, [selectedFile, isDirty, saveFile, refreshFileTree, checkCurrentExercise, checkStateIntegrity]);
+
+  const handleSave = async () => {
+    if (isDirty) {
+      await saveFile();
+      await refreshFileTree();
+      await checkCurrentExercise('');
+      await checkStateIntegrity();
+    }
+  };
 
   const handleCommand = async (command: string) => {
     const result = await executeCommand(command);
@@ -122,10 +150,28 @@ function App() {
                           <div className={styles.editorHeader}>
                             <span className={styles.editorFilename}>
                               {selectedFile.replace(`${CWD}/`, '')}
+                              {isDirty && <span className={styles.unsavedIndicator}>●</span>}
                             </span>
+                            {isDirty && (
+                              <button
+                                className={styles.saveBtn}
+                                onClick={handleSave}
+                                title="Save file (Cmd+S / Ctrl+S)"
+                              >
+                                <svg width="14" height="14" viewBox="0 0 16 16" fill="currentColor">
+                                  <path d="M13.354 1.146a.5.5 0 0 1 .146.354v12a.5.5 0 0 1-.5.5H3a.5.5 0 0 1-.5-.5V2.5a.5.5 0 0 1 .5-.5h9.793l.561.646zM3.5 2v12h9V2.207L11.293 2H3.5z"/>
+                                  <path d="M5 4h6v2H5V4zm0 4h6v5H5V8z"/>
+                                </svg>
+                              </button>
+                            )}
                           </div>
                           <div className={styles.editorContent}>
-                            <FileViewer content={fileContent} path={selectedFile} />
+                            <FileViewer
+                              content={editedContent}
+                              path={selectedFile}
+                              onChange={handleContentChange}
+                              readOnly={false}
+                            />
                           </div>
                         </>
                       ) : (
