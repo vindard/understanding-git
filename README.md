@@ -15,13 +15,14 @@ Learning git can be challenging - the command line interface, abstract concepts 
 
 ## 🎯 Current Status
 
-The app is functional with 5 foundational lessons covering git basics. The codebase has a robust test suite (276 tests) organized into three tiers: unit tests for pure functions, integration tests for service boundaries, and e2e tests for lesson flows.
+The app is functional with 6 foundational lessons covering git basics. The codebase has a robust test suite (360 tests) organized into three tiers: unit tests for pure functions, integration tests for service boundaries, and e2e tests for lesson flows.
 
 **What works well:**
 - Complete terminal experience with autocomplete and history
 - All basic git operations (init, add, commit, status, log, branch, checkout)
 - Guided lessons with validation and progress tracking
 - Environment integrity detection (warns if state becomes inconsistent)
+- Progress persistence with resume prompt on return visits
 
 ## ✨ Features
 
@@ -65,18 +66,24 @@ The app is functional with 5 foundational lessons covering git basics. The codeb
   - **Lesson 3**: Making Commits (git commit, git log)
   - **Lesson 4**: The Edit-Stage-Commit Cycle (modify, stage, commit workflow)
   - **Lesson 5**: Working with Multiple Files (batch operations, git add .)
+  - **Lesson 6**: Branching Basics (git branch, git checkout)
   - Hybrid validation: checks both command patterns and resulting state
   - Visual progress tracking with checkmarks
   - Contextual hints when stuck
   - Auto-advance to next exercise on completion
   - Broken state detection with recovery suggestions
+- **Progress Persistence**: Auto-saves progress to localStorage
+  - Resume prompt on return visits ("Welcome Back!")
+  - Shows lesson name and completed exercise count
+  - Option to resume or start fresh
+  - Progress cleared on environment reset
 
 ### Planned Next Steps
 
 **Near-term:**
-- Lesson 6+: Branching basics (creating, switching, listing branches)
 - Lesson 7+: Merging branches (fast-forward and merge commits)
 - Git diff command to show changes
+- User authentication for cross-device progress sync
 
 **Future:**
 - Visual git graph showing commit history and branches

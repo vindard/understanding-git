@@ -1,17 +1,19 @@
-import { useEffect } from 'react';
+import { useEffect, useState } from 'react';
 import { Allotment } from 'allotment';
 import 'allotment/dist/style.css';
 import { Terminal } from './components/Terminal/Terminal';
 import { FileTree } from './components/FileTree/FileTree';
 import { FileViewer } from './components/FileViewer/FileViewer';
 import { Instructions } from './components/Instructions/Instructions';
+import { ResumePrompt } from './components/ResumePrompt/ResumePrompt';
 import { executeCommand } from './lib/commands';
 import { setCurrentExercise } from './lib/completion';
 import { CWD } from './lib/config';
 import { lessons } from './data/lessons';
-import { useLessonProgress } from './hooks/useLessonProgress';
+import { useLessonProgress, type StoredProgress } from './hooks/useLessonProgress';
 import { useFileTree } from './hooks/useFileTree';
 import { useTerminalLayout } from './hooks/useTerminalLayout';
+import { loadProgress, clearProgress } from './lib/storage';
 import './styles/variables.css';
 import styles from './App.module.css';
 
@@ -49,13 +51,28 @@ function App() {
     goToPreviousLesson,
     resetProgress,
     skipToLesson,
+    resumeFromSaved,
     lessonIndex,
     totalLessons,
   } = useLessonProgress(lessons);
 
+  // Resume prompt state
+  const [showResumePrompt, setShowResumePrompt] = useState(false);
+  const [savedProgress, setSavedProgress] = useState<StoredProgress | null>(null);
+
   // Get current exercise for various checks
   const currentExercise = currentLesson?.exercises[currentExerciseIndex] ?? null;
   const isEditingAllowed = currentExercise?.allowEditing ?? false;
+
+  // Check for saved progress on mount
+  useEffect(() => {
+    loadProgress().then(saved => {
+      if (saved && saved.lessonIndex > 0) {
+        setSavedProgress(saved);
+        setShowResumePrompt(true);
+      }
+    });
+  }, []);
 
   // Update completion system with current exercise for lesson-aware suggestions
   useEffect(() => {
@@ -106,6 +123,19 @@ function App() {
     }
   };
 
+  const handleResume = async () => {
+    if (savedProgress) {
+      await resumeFromSaved(savedProgress);
+      await refreshFileTree();
+    }
+    setShowResumePrompt(false);
+  };
+
+  const handleStartFresh = async () => {
+    await clearProgress();
+    setShowResumePrompt(false);
+  };
+
   const handleCommand = async (command: string) => {
     const result = await executeCommand(command);
     await refreshFileTree();
@@ -124,8 +154,21 @@ function App() {
     return result;
   };
 
+  // Get the title of the saved lesson for display
+  const savedLessonTitle = savedProgress
+    ? lessons.find(l => l.id === savedProgress.lessonId)?.title ?? 'Unknown Lesson'
+    : '';
+
   return (
     <div className={styles.container}>
+      {showResumePrompt && savedProgress && (
+        <ResumePrompt
+          savedProgress={savedProgress}
+          lessonTitle={savedLessonTitle}
+          onResume={handleResume}
+          onStartFresh={handleStartFresh}
+        />
+      )}
       <Allotment>
         {/* File Tree Sidebar */}
         {!isTerminalFullscreen && (

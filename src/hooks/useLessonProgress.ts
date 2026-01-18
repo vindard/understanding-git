@@ -1,7 +1,13 @@
-import { useState, useCallback } from 'react';
+import { useState, useCallback, useEffect, useRef } from 'react';
 import type { Lesson, LessonProgress } from '../types/lesson';
 import { repoIntact } from '../lib/gitStateHash';
 import { skipToLesson as lessonSetupSkipToLesson } from '../lib/lessonSetup';
+import {
+  saveProgress,
+  clearProgress,
+  createStoredProgress,
+  type StoredProgress,
+} from '../lib/storage';
 
 interface UseLessonProgressReturn {
   currentLesson: Lesson;
@@ -14,8 +20,9 @@ interface UseLessonProgressReturn {
   checkStateIntegrity: () => Promise<void>;
   goToNextLesson: () => void;
   goToPreviousLesson: () => void;
-  resetProgress: () => void;
+  resetProgress: () => Promise<void>;
   skipToLesson: (lessonId: string) => Promise<boolean>;
+  resumeFromSaved: (saved: StoredProgress) => Promise<boolean>;
   lessonIndex: number;
   totalLessons: number;
 }
@@ -28,6 +35,9 @@ export function useLessonProgress(lessons: Lesson[]): UseLessonProgressReturn {
     currentExerciseIndex: 0,
   });
   const [isStateBroken, setIsStateBroken] = useState(false);
+
+  // Track if this is the initial render to skip auto-save on mount
+  const isInitialRender = useRef(true);
 
   const currentLesson = lessons[lessonIndex];
   const currentExerciseIndex = progress.currentExerciseIndex;
@@ -128,7 +138,7 @@ export function useLessonProgress(lessons: Lesson[]): UseLessonProgressReturn {
     }
   }, [lessonIndex, lessons]);
 
-  const resetProgress = useCallback(() => {
+  const resetProgress = useCallback(async () => {
     setLessonIndex(0);
     setProgress({
       lessonId: lessons[0]?.id || '',
@@ -136,6 +146,7 @@ export function useLessonProgress(lessons: Lesson[]): UseLessonProgressReturn {
       currentExerciseIndex: 0,
     });
     setIsStateBroken(false);
+    await clearProgress();
   }, [lessons]);
 
   const skipToLesson = useCallback(async (lessonId: string): Promise<boolean> => {
@@ -160,6 +171,35 @@ export function useLessonProgress(lessons: Lesson[]): UseLessonProgressReturn {
     return true;
   }, [lessons]);
 
+  const resumeFromSaved = useCallback(async (saved: StoredProgress): Promise<boolean> => {
+    const success = await skipToLesson(saved.lessonId);
+    if (success) {
+      setProgress({
+        lessonId: saved.lessonId,
+        completedExercises: saved.completedExercises,
+        currentExerciseIndex: saved.currentExerciseIndex,
+      });
+    }
+    return success;
+  }, [skipToLesson]);
+
+  // Auto-save progress to localStorage whenever it changes
+  // Skip the initial render to avoid overwriting saved progress before App can load it
+  useEffect(() => {
+    if (isInitialRender.current) {
+      isInitialRender.current = false;
+      return;
+    }
+
+    const storedProgress = createStoredProgress(
+      progress.lessonId,
+      lessonIndex,
+      progress.completedExercises,
+      progress.currentExerciseIndex,
+    );
+    saveProgress(storedProgress);
+  }, [lessonIndex, progress]);
+
   return {
     currentLesson,
     currentExerciseIndex,
@@ -173,7 +213,10 @@ export function useLessonProgress(lessons: Lesson[]): UseLessonProgressReturn {
     goToPreviousLesson,
     resetProgress,
     skipToLesson,
+    resumeFromSaved,
     lessonIndex,
     totalLessons: lessons.length,
   };
 }
+
+export type { StoredProgress };
