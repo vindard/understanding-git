@@ -13,42 +13,77 @@ Learning git can be challenging - the command line interface, abstract concepts 
 - See immediate visual feedback as files and the repository state change
 - Build muscle memory through hands-on exercises
 
+## 🎯 Current Status
+
+The app is functional with 5 foundational lessons covering git basics. The codebase has a robust test suite (276 tests) organized into three tiers: unit tests for pure functions, integration tests for service boundaries, and e2e tests for lesson flows.
+
+**What works well:**
+- Complete terminal experience with autocomplete and history
+- All basic git operations (init, add, commit, status, log, branch, checkout)
+- Guided lessons with validation and progress tracking
+- Environment integrity detection (warns if state becomes inconsistent)
+
 ## ✨ Features
 
 ### Implemented
 
-- **Virtual Filesystem**: In-browser filesystem using IndexedDB that resets on page refresh for a clean slate each session
+- **Virtual Filesystem**: In-browser filesystem using IndexedDB that persists during session
 - **Git Operations**: Core git commands powered by isomorphic-git
   - `git init` - Initialize a repository
-  - `git add` - Stage files
-  - `git commit` - Commit changes
+  - `git add` - Stage files (supports `.` for all files)
+  - `git commit -m` - Commit changes with message
   - `git status` - View repository status (with color-coded output)
   - `git log` - View commit history
   - `git branch` - List and create branches
   - `git checkout` - Switch branches
 - **Interactive Terminal**: Full terminal emulator with:
   - Tab autocomplete for commands, file paths, git subcommands, and branches
-  - Command history (up/down arrows)
-  - Cursor navigation (left/right arrows, Home/End)
-  - Line editing (backspace, delete)
+  - Shift+Tab to cycle backward through autocomplete suggestions
+  - Command history navigation (up/down arrows)
+  - Cursor navigation (left/right arrows, Home/End, Ctrl+A/E)
+  - Word navigation (Alt+Left/Right)
+  - Line editing (Backspace, Delete, Ctrl+U, Ctrl+K, Ctrl+W)
   - Color-coded output
 - **File Explorer**: Visual tree view of the virtual filesystem
 - **File Viewer**: Monaco editor integration for viewing file contents
-- **Resizable Panes**: VS Code-like draggable panel resizing
-- **Shell Commands**: Basic filesystem commands (`ls`, `cat`, `touch`, `mkdir`, `rm`, `echo`, `pwd`, `clear`, `reset`)
+- **Resizable Panes**: VS Code-like draggable panel layout with expand/fullscreen modes
+- **Shell Commands**: Filesystem and utility commands
+  - `ls` - List directory contents
+  - `cat` - Display file contents
+  - `head` / `tail` - Display first/last lines of a file (with `-n` option)
+  - `touch` - Create files (supports multiple files)
+  - `mkdir` - Create directories
+  - `rm` - Remove files (with `-r` for directories)
+  - `echo` - Output text (with `>` and `>>` redirection)
+  - `pwd` - Print working directory
+  - `clear` - Clear terminal screen
+  - `reset` - Reset environment to start fresh
+  - `help` - Show available commands
 - **Lesson System**: Progressive exercises teaching git fundamentals
-  - 5 lessons covering repository basics, file tracking, commits, and workflows
+  - **Lesson 1**: Your First Repository (git init, git status)
+  - **Lesson 2**: Tracking Files (touch, git add, staging)
+  - **Lesson 3**: Making Commits (git commit, git log)
+  - **Lesson 4**: The Edit-Stage-Commit Cycle (modify, stage, commit workflow)
+  - **Lesson 5**: Working with Multiple Files (batch operations, git add .)
   - Hybrid validation: checks both command patterns and resulting state
   - Visual progress tracking with checkmarks
-  - Hints for when you get stuck
+  - Contextual hints when stuck
   - Auto-advance to next exercise on completion
-  - Broken state detection with warning and recovery suggestions
+  - Broken state detection with recovery suggestions
 
-### Planned
+### Planned Next Steps
 
-- Branching and merging visualizations
-- Interactive rebasing exercises
-- Conflict resolution practice
+**Near-term:**
+- Lesson 6+: Branching basics (creating, switching, listing branches)
+- Lesson 7+: Merging branches (fast-forward and merge commits)
+- Git diff command to show changes
+
+**Future:**
+- Visual git graph showing commit history and branches
+- Interactive merge conflict resolution exercises
+- Cherry-pick and rebase tutorials
+- Stashing changes
+- Remote operations simulation (clone, push, pull concepts)
 
 ## 🛠️ Tech Stack
 
@@ -113,7 +148,12 @@ pnpm build
 Common tasks are available via [just](https://github.com/casey/just):
 
 ```bash
-just dev      # Start development server
-just install  # Install dependencies
-just build    # Build for production
+just dev       # Start development server
+just install   # Install dependencies
+just build     # Build for production
+just test      # Run all tests
+just test-unit # Run unit tests only (~500ms)
+just test-integration  # Run integration tests (~30s)
+just test-e2e  # Run e2e tests (~15s)
+just check     # Run all checks (typecheck, lint, test, build)
 ```
